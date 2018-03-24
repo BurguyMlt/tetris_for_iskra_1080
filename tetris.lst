@@ -1,0 +1,1093 @@
+0001 0000                      		.i8080
+0003 0000                      		setCursorY_F7DC   = 0F7DCh
+0004 0000                      		setCursorX_F7BE   = 0F7BEh
+0005 0000                      		printString_F137  = 0F137h
+0006 0000                      		waitKey_FDAC      = 0FDACh
+0007 0000                      		drawChar1_F7FB    = 0F7FBh
+0008 0000                      		drawChar2_F8B0    = 0F8B0h
+0009 0000                      		clearScreen1_F9A0 = 0F9A0h
+0010 0000                      		inkey_FC12        = 0FC12h
+0011 0000                      		negativeText_F798 = 0F798h
+0012 0000                      		normalText_F793   = 0F793h
+0013 0000                      		videoMode_C802    = 0C802h
+0015 0000                      		org 234
+0016 00EA                      		fileStart:
+0017 00EA 4C 56 4F             		.db 4ch, 56h, 4fh, 56h, 2fh, 32h, 2eh, 30h, 2fh, 0d0h, 6ch, 61h, 62h, 20h, 20h, 20h
+0018 00FA 00 01                		.dw entry
+0019 00FC 51 1F                		.dw end1
+0020 00FE 00 01                		.dw entry
+0022 0100                      		entry:
+0023 0100 C3 ED 06             		    jmp main
+0028 0103 51 84 10             		figures: db 81,132,16,101,81,132,16,101,64,149,84,33,64,149,84,33,81,217,84,118,81,217,84,118,16,84,16,84,16,84,16,84,65,101,64,88,16,82,81,73,64,152,16,66,16,149,84,38,81,137,64,101,16,132,16,98 
+0031 013B                      		CHECK = 255
+0032 013B                      		WIDTH = 10
+0033 013B                      		HEIGHT = 20
+0034 013B                      		BPL = WIDTH+1
+0035 013B                      		START = 1
+0038 013B 01 00 00             		map db 1,0,0,0,0,0,0,0,0,0,0,1
+0039 0147 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0040 0152 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0041 015D 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0042 0168 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0043 0173 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0044 017E 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0045 0189 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0046 0194 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0047 019F 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0048 01AA 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0049 01B5 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0050 01C0 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0051 01CB 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0052 01D6 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0053 01E1 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0054 01EC 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0055 01F7 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0056 0202 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0057 020D 00 00 00             		    db   0,0,0,0,0,0,0,0,0,0,1
+0058 0218 01 01 01             		    db   1,1,1,1,1,1,1,1,1,1,1    
+0060 0223 FF FF FF             		map2 db 10*20 dup(0FFh)
+0062 02EB 00                   		figureO db 0
+0063 02EC 00                   		figureA db 0
+0064 02ED 00                   		figureC db 0
+0065 02EE 31 D4                		score   dw 54321
+0066 02F0 00                   		nextC   db 0
+0067 02F1 00                   		nextO   db 0
+0068 02F2 00                   		level   db 0
+0069 02F3 02 02 03             		levelBg db 2,2,3,2,0,0,2,2,2,4
+0070 02FD                      		sCopy=0
+0071 02FD                      		sLogo=1
+0072 02FD                      		sMenu=2
+0073 02FD                      		sGame=3
+0074 02FD 04                   		sGameOver db 4
+0075 02FE 01                   		state   db sLogo;
+0076 02FF E8 03 20             		delays  dw 1000,800,700,600,500,400,300,200,150
+0077 0311 00                   		timerId db 0
+0081 0312                      		copy:
+0082 0312 1A                   		        ldax d
+0083 0313 77                   		        mov m, a
+0084 0314 1B                   		        dcx d
+0085 0315 2B                   		        dcx h
+0086 0316 0B                   		        dcx b
+0087 0317 79                   		        mov a, c
+0088 0318 B0                   		        ora b
+0089 0319 C2 12 03             		        jnz copy
+0090 031C C9                   		        ret
+0095 031D                      		clearScreen:
+0096 031D CD 2D 03             		        call clearScreen1
+0097 0320                      		clearScreen2:
+0098 0320 21 00 90             		        lxi  h, 9000h
+0099 0323 3E C0                		        mvi  a, 0C0h
+0100 0325                      		clearScreen_1:
+0101 0325 36 00                		        mvi  m, 0
+0102 0327 23                   		        inx  h
+0103 0328 BC                   		        cmp  h
+0104 0329 C2 25 03             		        jnz  clearScreen_1
+0105 032C C9                   		        ret
+0107 032D                      		clearScreen1:
+0108 032D 21 00 D0             		        lxi  h, 0D000h
+0109 0330 3E 00                		        mvi  a, 000h
+0110 0332 C3 25 03             		        jmp  clearScreen_1
+0114 0335                      		drawBackgrond:
+0115 0335 11 7F C8             		    lxi d, 0C87Fh
+0116 0338 21 FF 8F             		    lxi h, 08FFFh
+0117 033B 01 80 00             		    lxi b, 080h
+0118 033E CD 12 03             		    call copy
+0120 0341 CD CC 06             		    call blackPalette
+0122 0344 11 E0 11             		    lxi d, level1
+0123 0347 01 00 90             		    lxi b, 09000h
+0124 034A CD 1C 09             		    call unmlz
+0126 034D 21 FF FF             		    lxi h, 0FFFFh
+0127 0350 11 FF EF             		    lxi d, 0EFFFh
+0128 0353 01 00 30             		    lxi b, 03000h
+0129 0356 CD 12 03             		    call copy
+0131 0359 CD BB 06             		    call initPalette
+0133 035C 11 FF 8F             		    lxi d, 08FFFh
+0134 035F 21 7F C8             		    lxi h, 0C87Fh
+0135 0362 01 80 00             		    lxi b, 080h
+0136 0365 CD 12 03             		    call copy    
+0138 0368 C9                   		    ret
+0142 0369                      		redrawAll:
+0143 0369 CD 35 03             		    call drawBackgrond
+0146 036C 21 23 02             		    lxi  h, map2
+0147 036F 3E FF                		    mvi  a, 0FFh
+0148 0371 0E C8                		    mvi  c, WIDTH * HEIGHT
+0149 0373                      		redrawAll_1:
+0150 0373 77                   		    mov  m, a
+0151 0374 23                   		    inx  h
+0152 0375 0D                   		    dcr  c
+0153 0376 C2 73 03             		    jnz  redrawAll_1
+0155 0379 CD 85 03             		    call redrawNewFigure
+0156 037C CD D0 04             		    call redrawMap
+0157 037F CD D0 03             		    call redrawScore
+0158 0382 C3 FD 04             		    jmp  redrawGameover
+0163 0385                      		redrawNewFigure:
+0165 0385 AF                   		    xra  a
+0166 0386 11 F7 B8             		    lxi  d, 0B8F7h
+0167 0389 CD 9D 03             		    call clearNewFigure
+0168 038C 2F                   		    cma
+0169 038D 11 F7 F8             		    lxi  d, 0F8F7h
+0170 0390 CD 9D 03             		    call clearNewFigure    
+0174 0393 3A F1 02             		    lda  nextO
+0175 0396 21 B4 03             		    lxi  h, redrawNewFigure1
+0176 0399 CD 42 05             		    call decodeFigureEx
+0177 039C C9                   		    ret
+0182 039D                      		clearNewFigure:
+0183 039D 0E 30                		    mvi  c, 48
+0184 039F                      		clearNewFigure_1: 
+0185 039F 62                   		    mov  h, d
+0186 03A0 6B                   		    mov  l, e 
+0187 03A1 77                   		    mov  m, a    
+0188 03A2 24                   		    inr  h
+0189 03A3 77                   		    mov  m, a    
+0190 03A4 24                   		    inr  h
+0191 03A5 77                   		    mov  m, a    
+0192 03A6 24                   		    inr  h
+0193 03A7 77                   		    mov  m, a    
+0194 03A8 24                   		    inr  h
+0195 03A9 77                   		    mov  m, a    
+0196 03AA 24                   		    inr  h
+0197 03AB 77                   		    mov  m, a    
+0198 03AC 24                   		    inr  h
+0199 03AD 77                   		    mov  m, a    
+0200 03AE 1D                   		    dcr  e
+0201 03AF 0D                   		    dcr  c
+0202 03B0 C2 9F 03             		    jnz  clearNewFigure_1
+0203 03B3 C9                   		    ret
+0208 03B4                      		redrawNewFigure1:    
+0209 03B4 E5                   		    push h
+0210 03B5 D5                   		    push d
+0211 03B6 C5                   		    push b
+0214 03B7 7B                   		    mov  a, e
+0215 03B8 87                   		    add  a
+0216 03B9 87                   		    add  a
+0217 03BA 5F                   		    mov  e, a
+0218 03BB 87                   		    add  a
+0219 03BC 83                   		    add  e
+0220 03BD 5F                   		    mov  e, a        
+0221 03BE 3E F7                		    mvi  a, 0F7h
+0222 03C0 93                   		    sub  e
+0223 03C1 5F                   		    mov  e, a    
+0226 03C2 7A                   		    mov  a, d
+0227 03C3 C6 0A                		    adi  10
+0228 03C5 57                   		    mov  d, a
+0231 03C6 3E 00                		    mvi  a, 0
+0232 03C8 CD 33 04             		    call drawCell
+0234 03CB C1                   		    pop  b
+0235 03CC D1                   		    pop  d
+0236 03CD E1                   		    pop  h
+0239 03CE AF                   		    xra  a    
+0240 03CF C9                   		    ret    
+0245 03D0                      		redrawScore:
+0247 03D0 CD 98 F7             		    call negativeText_F798
+0250 03D3 3E 01                		    mvi  a, 1
+0251 03D5 CD DC F7             		    call setCursorY_F7DC
+0254 03D8 06 3D                		    mvi  b, 61
+0257 03DA 2A EE 02             		    lhld score
+0258 03DD EB                   		    xchg
+0260 03DE                      		redrawScore_1: 
+0261 03DE C5                   		    push b    
+0263 03DF E5                   		    push h
+0264 03E0 78                   		    mov  a, b
+0265 03E1 CD BE F7             		    call setCursorX_F7BE
+0266 03E4 E1                   		    pop  h
+0268 03E5 21 0A 00             		    lxi  h, 10
+0269 03E8 CD DC 07             		    call _DIV       
+0271 03EB E5                   		    push h        
+0272 03EC 7B                   		    mov  a, e
+0273 03ED C6 30                		    adi  '0'
+0274 03EF CD FB F7             		    call drawChar1_F7FB
+0275 03F2 D1                   		    pop  d
+0276 03F3 C1                   		    pop  b
+0278 03F4 05                   		    dcr b
+0280 03F5 7A                   		    mov  a, d
+0281 03F6 B3                   		    ora  e
+0282 03F7 C2 DE 03             		    jnz redrawScore_1    
+0283 03FA C9                   		    ret
+0288 03FB F0 3F FF             		cellOff: db 240- 0,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0289 03FF EE FF FC             		         db 240- 2,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0290 0403 ED 03 FF             		         db 240- 3,003h,0FFh,0F0h ; 00000011,11111111,11110000         
+0291 0407 EB 0F FF             		         db 240- 5,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
+0292 040B E9 3F FF             		         db 240- 7,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0293 040F E7 FF FC             		         db 240- 9,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0294 0413 E6 03 FF             		         db 240-10,003h,0FFh,0F0h ; 00000011,11111111,11110000         
+0295 0417 E4 0F FF             		         db 240-12,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
+0296 041B E2 3F FF             		         db 240-14,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0297 041F E0 FF FC             		         db 240-16,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0299 0423 FE FF FC             		         db 254- 0,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0300 0427 FD 03 FF             		         db 254- 1,003h,0FFh,0F0h ; 00000011,11111111,11110000         
+0301 042B FB 0F FF             		         db 254- 3,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
+0302 042F F9 3F FF             		         db 254- 5,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0304 0433                      		drawCell:
+0306 0433 43                   		    mov b, e
+0307 0434 21 FB 03             		    lxi h, cellOff
+0308 0437 5A                   		    mov e, d
+0309 0438 16 00                		    mvi d, 0
+0310 043A 19                   		    dad d
+0311 043B 19                   		    dad d
+0312 043C 19                   		    dad d
+0313 043D 19                   		    dad d
+0314 043E 56                   		    mov d, m
+0315 043F 58                   		    mov e, b
+0316 0440 23                   		    inx  h
+0318 0441 4F                   		    mov  c, a      
+0320 0442 CD 50 04             		    call clearCell3
+0322 0445 79                   		    mov  a, c
+0323 0446 0F                   		    rrc
+0324 0447 4F                   		    mov  c, a
+0326 0448 7A                   		    mov  a, d
+0327 0449 D6 40                		    sui  40h
+0328 044B 57                   		    mov  d, a
+0330 044C CD 50 04             		    call clearCell3
+0332 044F C9                   		    ret
+0336 0450                      		clearCell3:
+0337 0450 E5                   		    push h
+0338 0451 D5                   		    push d
+0340 0452 46                   		    mov  b, m    
+0341 0453 CD 63 04             		    call clearCell
+0343 0456 23                   		    inx  h
+0344 0457 46                   		    mov  b, m    
+0345 0458 CD 63 04             		    call clearCell
+0347 045B 23                   		    inx  h
+0348 045C 46                   		    mov  b, m    
+0349 045D CD 63 04             		    call clearCell
+0351 0460 D1                   		    pop d
+0352 0461 E1                   		    pop h
+0353 0462 C9                   		    ret
+0357 0463                      		clearCell:
+0358 0463 D5                   		    push d
+0360 0464 79                   		    mov  a, c
+0361 0465 0F                   		    rrc
+0362 0466 DA 9E 04             		    jc   setCell
+0364 0469 78                   		    mov  a, b
+0365 046A 2F                   		    cma
+0366 046B 47                   		    mov  b, a
+0368 046C 1A                   		    ldax d
+0369 046D A0                   		    ana  b    
+0370 046E 12                   		    stax d
+0371 046F 1B                   		    dcx  d
+0373 0470 1A                   		    ldax d
+0374 0471 A0                   		    ana  b    
+0375 0472 12                   		    stax d
+0376 0473 1B                   		    dcx  d
+0378 0474 1A                   		    ldax d
+0379 0475 A0                   		    ana  b    
+0380 0476 12                   		    stax d
+0381 0477 1B                   		    dcx  d
+0383 0478 1A                   		    ldax d
+0384 0479 A0                   		    ana  b    
+0385 047A 12                   		    stax d
+0386 047B 1B                   		    dcx  d
+0388 047C 1A                   		    ldax d
+0389 047D A0                   		    ana  b    
+0390 047E 12                   		    stax d
+0391 047F 1B                   		    dcx  d
+0393 0480 1A                   		    ldax d
+0394 0481 A0                   		    ana  b    
+0395 0482 12                   		    stax d
+0396 0483 1B                   		    dcx  d
+0398 0484 1A                   		    ldax d
+0399 0485 A0                   		    ana  b    
+0400 0486 12                   		    stax d
+0401 0487 1B                   		    dcx  d
+0403 0488 1A                   		    ldax d
+0404 0489 A0                   		    ana  b    
+0405 048A 12                   		    stax d
+0406 048B 1B                   		    dcx  d
+0408 048C 1A                   		    ldax d
+0409 048D A0                   		    ana  b    
+0410 048E 12                   		    stax d
+0411 048F 1B                   		    dcx  d
+0413 0490 1A                   		    ldax d
+0414 0491 A0                   		    ana  b    
+0415 0492 12                   		    stax d
+0416 0493 1B                   		    dcx  d
+0418 0494 1A                   		    ldax d
+0419 0495 A0                   		    ana  b    
+0420 0496 12                   		    stax d
+0421 0497 1B                   		    dcx  d
+0423 0498 1A                   		    ldax d
+0424 0499 A0                   		    ana  b    
+0425 049A 12                   		    stax d
+0427 049B D1                   		    pop  d
+0428 049C 15                   		    dcr  d
+0430 049D C9                   		    ret
+0434 049E                      		setCell:
+0435 049E 1A                   		    ldax d
+0436 049F B0                   		    ora  b    
+0437 04A0 12                   		    stax d
+0438 04A1 1B                   		    dcx  d
+0440 04A2 1A                   		    ldax d
+0441 04A3 B0                   		    ora  b    
+0442 04A4 12                   		    stax d
+0443 04A5 1B                   		    dcx  d
+0445 04A6 1A                   		    ldax d
+0446 04A7 B0                   		    ora  b    
+0447 04A8 12                   		    stax d
+0448 04A9 1B                   		    dcx  d
+0450 04AA 1A                   		    ldax d
+0451 04AB B0                   		    ora  b    
+0452 04AC 12                   		    stax d
+0453 04AD 1B                   		    dcx  d
+0455 04AE 1A                   		    ldax d
+0456 04AF B0                   		    ora  b    
+0457 04B0 12                   		    stax d
+0458 04B1 1B                   		    dcx  d
+0460 04B2 1A                   		    ldax d
+0461 04B3 B0                   		    ora  b    
+0462 04B4 12                   		    stax d
+0463 04B5 1B                   		    dcx  d
+0465 04B6 1A                   		    ldax d
+0466 04B7 B0                   		    ora  b    
+0467 04B8 12                   		    stax d
+0468 04B9 1B                   		    dcx  d
+0470 04BA 1A                   		    ldax d
+0471 04BB B0                   		    ora  b    
+0472 04BC 12                   		    stax d
+0473 04BD 1B                   		    dcx  d
+0475 04BE 1A                   		    ldax d
+0476 04BF B0                   		    ora  b    
+0477 04C0 12                   		    stax d
+0478 04C1 1B                   		    dcx  d
+0480 04C2 1A                   		    ldax d
+0481 04C3 B0                   		    ora  b    
+0482 04C4 12                   		    stax d
+0483 04C5 1B                   		    dcx  d
+0485 04C6 1A                   		    ldax d
+0486 04C7 B0                   		    ora  b    
+0487 04C8 12                   		    stax d
+0488 04C9 1B                   		    dcx  d
+0490 04CA 1A                   		    ldax d
+0491 04CB B0                   		    ora  b    
+0492 04CC 12                   		    stax d
+0494 04CD D1                   		    pop  d
+0495 04CE 15                   		    dcr  d
+0497 04CF C9                   		    ret
+0501 04D0                      		POS_Y = 8
+0503 04D0                      		redrawMap:
+0505 04D0 01 3C 01             		    lxi b, map + START
+0506 04D3 21 23 02             		    lxi h, map2
+0509 04D6 1E F7                		    mvi e, 0FFh - POS_Y
+0510 04D8                      		redrawMap_1:
+0513 04D8 16 00                		    mvi d, 0
+0514 04DA                      		redrawMap_2:
+0519 04DA 0A                   		    ldax b
+0520 04DB BE                   		    cmp  m
+0521 04DC CA E9 04             		    jz   redrawMap_3
+0522 04DF 77                   		    mov  m, a    
+0524 04E0 C5                   		    push b
+0525 04E1 D5                   		    push d    
+0526 04E2 E5                   		    push h
+0527 04E3 CD 33 04             		    call drawCell
+0528 04E6 E1                   		    pop  h
+0529 04E7 D1                   		    pop  d    
+0530 04E8 C1                   		    pop  b
+0532 04E9                      		redrawMap_3:
+0533 04E9 14                   		    inr  d
+0534 04EA 03                   		    inx  b
+0535 04EB 23                   		    inx  h    
+0536 04EC 7A                   		    mov  a, d
+0537 04ED FE 0A                		    cpi  WIDTH
+0538 04EF C2 DA 04             		    jnz  redrawMap_2
+0540 04F2 03                   		    inx  b
+0541 04F3 7B                   		    mov  a, e
+0542 04F4 D6 0C                		    sui  12
+0543 04F6 5F                   		    mov  e, a       
+0544 04F7 FE 07                		    cpi  0FFh - POS_Y - (HEIGHT * 12)
+0545 04F9 C2 D8 04             		    jnz  redrawMap_1
+0546 04FC C9                   		    ret
+0550 04FD                      		redrawGameover:
+0552 04FD 3A FE 02             		    lda  state
+0553 0500 FE 03                		    cpi  sGame
+0554 0502 C8                   		    rz
+0560 0503 C9                   		    ret
+0564 0504                      		checkFigure:
+0566 0504 7E                   		    mov a, m
+0567 0505 B7                   		    ora a
+0568 0506 C9                   		    ret
+0575 0507                      		drawFigure:
+0576 0507 3A ED 02             		    lda  figureC
+0577 050A 77                   		    mov  m, a
+0578 050B AF                   		    xra  a ; return z
+0579 050C C9                   		    ret
+0583 050D                      		clearFigure:
+0584 050D 36 00                		    mvi m, 0
+0585 050F AF                   		    xra a ; return z
+0586 0510 C9                   		    ret
+0596 0511                      		decodeFigure2:
+0597 0511 6F                   		    mov  l, a
+0598 0512 E6 03                		    ani  3
+0599 0514 57                   		    mov  d, a ; d - это X
+0600 0515 7D                   		    mov  a, l
+0601 0516 0F                   		    rrc
+0602 0517 0F                   		    rrc
+0603 0518 E6 03                		    ani  3
+0604 051A 5F                   		    mov  e, a ; e - это Y
+0605 051B 87                   		    add  a ; *2
+0606 051C 87                   		    add  a ; *4
+0607 051D 83                   		    add  e ; *5
+0608 051E 87                   		    add  a ; *10
+0609 051F 83                   		    add  e ; *11
+0610 0520 82                   		    add  d
+0611 0521 47                   		    mov  b, a
+0612 0522 3A EC 02             		    lda  figureA
+0613 0525 80                   		    add  b
+0614 0526 26 00                		    mvi  h, 0
+0615 0528 6F                   		    mov  l, a
+0616 0529 01 3C 01             		    lxi  b, map + START
+0617 052C 09                   		    dad  b
+0620 052D                      		decodeFigure3 = $+1    
+0621 052D C3 00 00             		    jmp 0
+0626 0530                      		decodeFigure1:
+0627 0530 6F                   		    mov  l, a
+0628 0531 E5                   		    push h
+0629 0532 CD 11 05             		    call decodeFigure2
+0630 0535 E1                   		    pop  h
+0631 0536 C0                   		    rnz
+0632 0537 7D                   		    mov  a, l
+0633 0538 0F                   		    rrc
+0634 0539 0F                   		    rrc
+0635 053A 0F                   		    rrc
+0636 053B 0F                   		    rrc
+0637 053C C3 11 05             		    jmp  decodeFigure2
+0642 053F                      		decodeFigure:
+0643 053F 3A EB 02             		    lda  figureO
+0645 0542                      		decodeFigureEx:
+0646 0542 22 2E 05             		    shld decodeFigure3
+0649 0545 6F                   		    mov  l, a
+0650 0546 26 00                		    mvi  h, 0
+0651 0548 11 03 01             		    lxi  d, figures
+0652 054B 19                   		    dad  d
+0653 054C 7E                   		    mov  a, m
+0654 054D E5                   		    push h
+0655 054E CD 30 05             		    call decodeFigure1
+0656 0551 E1                   		    pop  h
+0657 0552 C0                   		    rnz
+0660 0553 23                   		    inx  h
+0661 0554 7E                   		    mov  a, m
+0662 0555 C3 30 05             		    jmp  decodeFigure1
+0666 0558                      		gen:
+0668 0558 CD D1 07             		    call rand
+0669 055B                      		gen_2:
+0670 055B DE 07                		    sbi  7
+0671 055D D2 5B 05             		    jnc  gen_2
+0672 0560 C6 07                		    adi  7    
+0674 0562 87                   		    add  a
+0675 0563 87                   		    add  a
+0676 0564 87                   		    add  a
+0677 0565 32 F1 02             		    sta  nextO
+0680 0568 CD D1 07             		    call rand
+0681 056B                      		gen_3:
+0682 056B DE 03                		    sbi  3
+0683 056D D2 6B 05             		    jnc  gen_3
+0684 0570 C6 03                		    adi  3
+0685 0572 3C                   		    inr  a
+0686 0573 32 F0 02             		    sta  nextC
+0687 0576 C9                   		    ret
+0691 0577                      		newFigureEx:
+0693 0577 3A F1 02             		    lda  nextO
+0694 057A 32 EB 02             		    sta  figureO
+0697 057D 3A F0 02             		    lda  nextC
+0698 0580 32 ED 02             		    sta  figureC
+0701 0583 3E 04                		    mvi  a, 4
+0702 0585 32 EC 02             		    sta  figureA
+0705 0588 21 04 05             		    lxi  h, checkFigure
+0706 058B CD 3F 05             		    call decodeFigure
+0707 058E CA 96 05             		    jz   newFigure_1
+0708 0591 3E FD                		    mvi  a, sGameOver
+0709 0593 32 FE 02             		    sta  state
+0710 0596                      		newFigure_1:
+0713 0596 21 07 05             		    lxi  h, drawFigure
+0714 0599 CD 3F 05             		    call decodeFigure
+0717 059C C3 58 05             		    jmp gen
+0721 059F                      		newFigure:
+0722 059F CD 77 05             		    call newFigureEx
+0725 05A2 CD 85 03             		    call redrawNewFigure
+0728 05A5 CD D0 04             		    call redrawMap
+0731 05A8 C3 FD 04             		    jmp redrawGameover
+0738 05AB                      		move:
+0740 05AB 3A FE 02             		    lda  state
+0741 05AE FE 03                		    cpi  sGame
+0742 05B0 C0                   		    rnz
+0745 05B1 C5                   		    push b
+0746 05B2 21 0D 05             		    lxi  h, clearFigure
+0747 05B5 CD 3F 05             		    call decodeFigure
+0748 05B8 C1                   		    pop  b
+0751 05B9 3A EC 02             		    lda figureA
+0752 05BC F5                   		    push psw
+0753 05BD 81                   		    add c
+0754 05BE 32 EC 02             		    sta figureA
+0757 05C1 3A EB 02             		    lda  figureO
+0758 05C4 F5                   		    push psw
+0761 05C5 05                   		    dcr b
+0762 05C6 C2 D6 05             		    jnz move_1
+0764 05C9 47                   		    mov b, a
+0765 05CA 3C                   		    inr a
+0766 05CB 3C                   		    inr a
+0767 05CC E6 06                		    ani 6
+0768 05CE 4F                   		    mov c, a
+0769 05CF 78                   		    mov a, b
+0770 05D0 E6 F9                		    ani 0F9h
+0771 05D2 81                   		    add c
+0772 05D3 32 EB 02             		    sta figureO    
+0774 05D6                      		move_1:
+0777 05D6 21 04 05             		    lxi  h, checkFigure
+0778 05D9 CD 3F 05             		    call decodeFigure
+0779 05DC CA EF 05             		    jz   move_2
+0783 05DF F1                   		    pop psw
+0784 05E0 32 EB 02             		    sta figureO
+0785 05E3 F1                   		    pop psw
+0786 05E4 32 EC 02             		    sta figureA
+0789 05E7 21 07 05             		    lxi  h, drawFigure
+0790 05EA CD 3F 05             		    call decodeFigure
+0793 05ED AF                   		    xra a
+0794 05EE C9                   		    ret
+0796 05EF                      		move_2:       
+0798 05EF F1                   		    pop psw
+0799 05F0 F1                   		    pop psw
+0802 05F1 21 07 05             		    lxi  h, drawFigure
+0803 05F4 CD 3F 05             		    call decodeFigure
+0806 05F7 CD D0 04             		    call redrawMap
+0809 05FA AF                   		    xra a
+0810 05FB 3C                   		    inr a
+0811 05FC C9                   		    ret
+0817 05FD                      		deleteLine:
+0819 05FD 2B                   		    dcx  h
+0822 05FE 54                   		    mov  d, h
+0823 05FF 5D                   		    mov  e, l
+0824 0600 01 0B 00             		    lxi  b, BPL
+0825 0603 09                   		    dad  b
+0828 0604                      		deleteLine_1:
+0829 0604 1A                   		    ldax d
+0830 0605 1B                   		    dcx  d
+0831 0606 77                   		    mov  m, a
+0832 0607 2B                   		    dcx  h
+0835 0608 7B                   		    mov  a, e
+0836 0609 D6 3B                		    sui  map
+0837 060B 7A                   		    mov  a, d
+0838 060C DE 01                		    sbi  (map/256)
+0839 060E D2 04 06             		    jnc  deleteLine_1
+0842 0611 21 3C 01             		    lxi  h, map + START    
+0843 0614 CD 1A 06             		    call clearLine    
+0847 0617 C3 D0 04             		    jmp  redrawMap
+0852 061A                      		clearLine:
+0857 061A 06 0A                		    mvi  b, WIDTH
+0858 061C                      		clearLine_1:
+0859 061C 36 00                		    mvi  m, 0
+0860 061E 23                   		    inx  h
+0861 061F 05                   		    dcr  b
+0862 0620 C2 1C 06             		    jnz  clearLine_1
+0863 0623 C9                   		    ret
+0867 0624                      		newGame:
+0868 0624 CD 58 05             		    call gen
+0869 0627 AF                   		    xra  a 
+0870 0628 32 F2 02             		    sta  level
+0871 062B 32 EE 02             		    sta  score + 0
+0872 062E 32 EF 02             		    sta  score + 1    
+0873 0631 3E 03                		    mvi  a, sGame
+0874 0633 32 FE 02             		    sta  state
+0879 0636 21 3B 01             		    lxi  h, map
+0880 0639 36 01                		    mvi  m, 1
+0881 063B 23                   		    inx  h
+0882 063C 0E 14                		    mvi  c, HEIGHT
+0883 063E                      		newGame_1:
+0884 063E CD 1A 06             		    call clearLine
+0885 0641 36 01                		    mvi  m, 1
+0886 0643 23                   		    inx  h
+0887 0644 0D                   		    dcr  c
+0888 0645 C2 3E 06             		    jnz  newGame_1
+0890 0648 CD 77 05             		    call  newFigureEx
+0892 064B CD 69 03             		    call  redrawAll
+0894 064E C9                   		    ret    
+0898 064F                      		down1:   
+0900 064F 01 0B 00             		    lxi  b, BPL
+0901 0652 CD AB 05             		    call move
+0902 0655 C0                   		    rnz
+0905 0656 CD 71 06             		    call checkLines
+0908 0659 CD 9F 05             		    call newFigure
+0911 065C AF                   		    xra a
+0912 065D C9                   		    ret
+0916 065E                      		checkLine:
+0920 065E 0E 0A                		    mvi  c, WIDTH
+0921 0660                      		checkLine_1:
+0922 0660 7E                   		    mov  a, m
+0923 0661 B7                   		    ora  a
+0924 0662 C8                   		    rz
+0925 0663 23                   		    inx  h
+0926 0664 0D                   		    dcr  c
+0927 0665 C2 60 06             		    jnz  checkLine_1
+0930 0668 AF                   		    xra a
+0931 0669 3C                   		    inr a
+0932 066A C9                   		    ret
+0936 066B                      		setLevel:
+0938 066B 32 F2 02             		    sta level
+0944 066E C3 69 03             		    jmp redrawAll
+0948 0671                      		checkLines:
+0951 0671 21 0D 02             		    lxi h, map + START + (BPL * (HEIGHT - 1))
+0952 0674                      		checkLines_1:
+0956 0674 E5                   		    push h
+0957 0675 CD 5E 06             		    call checkLine
+0958 0678 E1                   		    pop  h
+0959 0679 CA 8E 06             		    jz checkLines_2
+0961 067C E5                   		    push h
+0962 067D CD FD 05             		    call deleteLine
+0964 0680 2A EE 02             		    lhld score
+0965 0683 23                   		    inx  h
+0966 0684 22 EE 02             		    shld score
+0967 0687 CD D0 03             		    call redrawScore
+0968 068A E1                   		    pop  h
+0971 068B C3 74 06             		    jmp checkLines_1
+0972 068E                      		checkLines_2:    
+0975 068E 11 F5 FF             		    lxi d, 65536-BPL
+0976 0691 19                   		    dad d
+0978 0692 7D                   		    mov a, l
+0979 0693 D6 3D                		    sui (map + START + 1)
+0980 0695 7C                   		    mov a, h
+0981 0696 DE 01                		    sbi (map + START + 1) / 256
+0982 0698 D2 74 06             		    jnc checkLines_1    
+0989 069B C9                   		    ret
+0991 069C                      		down:
+0993 069C 01 0B 00             		    lxi  b, BPL
+0994 069F CD AB 05             		    call move
+0995 06A2 C2 9C 06             		    jnz  down
+0998 06A5 CD 71 06             		    call checkLines
+1001 06A8 CD 9F 05             		    call newFigure
+1005 06AB C3 5A 07             		    jmp gameLoop
+1007 06AE                      		tick:
+1009 06AE 3A FE 02             		    lda  state
+1010 06B1 FE 03                		    cpi  sGame
+1011 06B3 C0                   		    rnz
+1014 06B4 CD 4F 06             		    call down1
+1017 06B7 CD D0 04             		    call redrawMap
+1019 06BA C9                   		    ret
+1023 06BB                      		initPalette:
+1024 06BB 3E 0F                		    mvi  a, 15 ; black
+1025 06BD D3 90                		    out  90h
+1026 06BF 3E 03                		    mvi  a, 3 ; red
+1027 06C1 D3 91                		    out  91h
+1028 06C3 3E 04                		    mvi  a, 4 ; cyan
+1029 06C5 D3 92                		    out  92h
+1030 06C7 3E 00                		    mvi  a, 0 ; white
+1031 06C9 D3 93                		    out  93h
+1032 06CB C9                   		    ret
+1036 06CC                      		blackPalette:
+1037 06CC 3E 0F                		    mvi  a, 15 ; black
+1038 06CE D3 90                		    out  90h
+1039 06D0 D3 91                		    out  91h
+1040 06D2 D3 92                		    out  92h
+1041 06D4 D3 93                		    out  93h
+1042 06D6 C9                   		    ret
+1046 06D7 00                   		timer db 0 
+1047 06D8 00                   		keybTimer db 0
+1051 06D9                      		key:
+1053 06D9                      		main_3:
+1054 06D9 CD 12 FC             		    call inkey_FC12
+1055 06DC FE FF                		    cpi  0FFh
+1056 06DE C2 D9 06             		    jnz  main_3
+1057 06E1                      		main_4:
+1058 06E1 CD D1 07             		    call rand
+1059 06E4 CD 12 FC             		    call inkey_FC12
+1060 06E7 FE FF                		    cpi  0FFh
+1061 06E9 CA E1 06             		    jz   main_4
+1062 06EC C9                   		    ret
+1066 06ED                      		main:
+1067 06ED 31 00 01             		    lxi sp, 100h
+1070 06F0 CD BB 06             		    call initPalette
+1073 06F3 3E 40                		    mvi  a, 40h
+1074 06F5 32 02 C8             		    sta  videoMode_C802
+1077 06F8 CD 93 F7             		    call normalText_F793
+1080 06FB CD 1D 03             		    call clearScreen
+1083 06FE 21 0A 08             		    lxi  h, aStart
+1084 0701                      		main_0:
+1085 0701 7E                   		    mov  a, m
+1086 0702 23                   		    inx  h
+1087 0703 B7                   		    ora  a
+1088 0704 CA 21 07             		    jz   main_1
+1089 0707 FE 20                		    cpi  32
+1090 0709 D2 1B 07             		    jnc  main_2    
+1091 070C E5                   		    push h
+1092 070D CD DC F7             		    call setCursorY_F7DC    
+1093 0710 E1                   		    pop  h
+1094 0711 7E                   		    mov  a, m
+1095 0712 23                   		    inx  h
+1096 0713 E5                   		    push h
+1097 0714 CD BE F7             		    call setCursorX_F7BE
+1098 0717 E1                   		    pop  h
+1099 0718 C3 01 07             		    jmp  main_0
+1100 071B                      		main_2:    
+1101 071B CD FB F7             		    call drawChar1_F7FB
+1102 071E C3 01 07             		    jmp  main_0    
+1103 0721                      		main_1:
+1105 0721 CD D9 06             		    call key    
+1107 0724 CD CC 06             		    call blackPalette
+1109 0727 CD 2D 03             		    call clearScreen1
+1111 072A 11 EE 09             		    lxi  d, logo
+1112 072D 01 00 90             		    lxi  b, 09000h
+1113 0730 C5                   		    push b
+1114 0731 CD 1C 09             		    call unmlz
+1115 0734 D1                   		    pop  d
+1117 0735 21 2D D4             		    lxi  h, 0D42Dh
+1118 0738 0E 28                		    mvi  c, 40
+1119 073A                      		main_5:
+1120 073A C5                   		    push b
+1122 073B 0E A6                		    mvi  c, 166
+1123 073D                      		main_4:
+1124 073D 1A                   		    ldax d
+1125 073E 13                   		    inx  d
+1126 073F 77                   		    mov  m, a
+1127 0740 23                   		    inx  h
+1128 0741 0D                   		    dcr  c
+1129 0742 C2 3D 07             		    jnz  main_4
+1131 0745 01 5A 00             		    lxi  b, 256-166
+1132 0748 09                   		    dad  b
+1134 0749 C1                   		    pop  b
+1135 074A 0D                   		    dcr  c
+1136 074B C2 3A 07             		    jnz  main_5
+1138 074E CD 20 03             		    call clearScreen2
+1140 0751 CD BB 06             		    call initPalette
+1142 0754 CD D9 06             		    call key    
+1143 0757 CD 24 06             		    call newGame
+1145 075A                      		gameLoop:
+1146 075A 3A D7 06             		    lda timer
+1147 075D 3C                   		    inr a
+1148 075E 32 D7 06             		    sta timer
+1149 0761 C2 67 07             		    jnz gameLoop_2
+1150 0764 CD AE 06             		    call tick
+1151 0767                      		gameLoop_2:
+1154 0767 CD D1 07             		    call rand
+1157 076A CD 12 FC             		    call inkey_FC12
+1158 076D 47                   		    mov  b, a
+1161 076E 3A D8 06             		    lda  keybTimer
+1162 0771 B7                   		    ora  a
+1163 0772 CA 85 07             		    jz   gameLoop_1
+1165 0775 3D                   		    dcr  a
+1166 0776 C2 80 07             		    jnz  gameLoop_164
+1168 0779 78                   		    mov  a, b
+1169 077A FE FF                		    cpi  0FFh
+1170 077C C2 83 07             		    jnz  gameLoop_17 
+1171 077F AF                   		    xra  a
+1172 0780                      		gameLoop_164:    
+1173 0780 32 D8 06             		    sta  keybTimer
+1174 0783                      		gameLoop_17:    
+1175 0783 06 FF                		    mvi  b, 0FFh
+1176 0785                      		gameLoop_1:
+1177 0785 78                   		    mov  a, b    
+1179 0786 FE FF                		    cpi  0FFh
+1180 0788 CA 91 07             		    jz   gameLoop_4
+1181 078B 3E 02                		    mvi  a, 2
+1182 078D 32 D8 06             		    sta  keybTimer
+1183 0790 78                   		    mov  a, b
+1184 0791                      		gameLoop_4:
+1187 0791 FE 0D                		    cpi  13
+1188 0793 C2 9C 07             		    jnz  gameLoop_185
+1189 0796 CD 24 06             		    call newGame
+1190 0799 C3 5A 07             		    jmp  gameLoop
+1192 079C                      		gameLoop_185:   
+1194 079C FE 88                		    cpi  136
+1195 079E C2 AA 07             		    jnz  gameLoop_16
+1196 07A1 01 00 01             		    lxi  b, 100h 
+1197 07A4 CD AB 05             		    call move
+1198 07A7 C3 5A 07             		    jmp  gameLoop
+1199 07AA                      		gameLoop_16:
+1202 07AA FE 82                		    cpi  130
+1203 07AC CA 9C 06             		    jz   down
+1206 07AF FE 84                		    cpi  132
+1207 07B1 C2 BA 07             		    jnz  gameLoop_18
+1208 07B4 01 FF 00             		    lxi  b, 0FFh 
+1209 07B7 CD AB 05             		    call move
+1210 07BA                      		gameLoop_18:
+1212 07BA FE 86                		    cpi  134
+1213 07BC C2 C8 07             		    jnz  gameLoop_19
+1214 07BF 01 01 00             		    lxi  b, 01h 
+1215 07C2 CD AB 05             		    call move    
+1216 07C5 C3 5A 07             		    jmp  gameLoop
+1217 07C8                      		gameLoop_19:
+1218 07C8 01 00 00             		    lxi  b, 0
+1219 07CB CD AB 05             		    call move    
+1220 07CE C3 5A 07             		    jmp  gameLoop
+1224 07D1                      		rand:
+1225 07D1                      		rand_seed = $+1
+1226 07D1 3E 00                		    mvi a, 0
+1227 07D3 5F                   		    mov e,a
+1228 07D4 87                   		    add a
+1229 07D5 87                   		    add a
+1230 07D6 83                   		    add e
+1231 07D7 3C                   		    inr a
+1232 07D8 32 D2 07             		    sta rand_seed
+1233 07DB C9                   		    ret
+1238 07DC                      		_DIV0:
+1239 07DC 7C                   		_DIV:	MOV A,H
+1240 07DD B5                   			ORA L
+1241 07DE C8                   			RZ
+1242 07DF 01 00 00             			LXI B,0000
+1243 07E2 C5                   			PUSH B
+1244 07E3 7B                   		_DIV1:	MOV A,E
+1245 07E4 95                   			SUB L
+1246 07E5 7A                   			MOV A,D
+1247 07E6 9C                   			SBB H
+1248 07E7 DA EF 07             			JC _DIV2
+1249 07EA E5                   			PUSH H
+1250 07EB 29                   			DAD H
+1251 07EC D2 E3 07             			JNC _DIV1
+1252 07EF 21 00 00             		_DIV2:	LXI H,0000
+1253 07F2 C1                   		_DIV3:	POP B
+1254 07F3 78                   			MOV A,B
+1255 07F4 B1                   			ORA C
+1256 07F5 C8                   			RZ
+1257 07F6 29                   			DAD H
+1258 07F7 D5                   			PUSH D
+1259 07F8 7B                   			MOV A,E
+1260 07F9 91                   			SUB C
+1261 07FA 5F                   			MOV E,A
+1262 07FB 7A                   			MOV A,D
+1263 07FC 98                   			SBB B
+1264 07FD 57                   			MOV D,A
+1265 07FE DA 06 08             			JC _DIV4
+1266 0801 23                   			INX H
+1267 0802 C1                   			POP B
+1268 0803 C3 F2 07             			JMP _DIV3
+1269 0806 D1                   		_DIV4:	POP D
+1270 0807 C3 F2 07             			JMP _DIV3
+1274 080A 04 13 53             		aStart: db  4,15+4 ,    "SPECTRUM HOLOBYTE PRESENTS"
+1275 0826 06 1A 54             		        db  6,15+11,          "T E T R I S"
+1276 0833 08 0F 56             		        db  8,15   ,"VERSION"
+1277 083C 08 21 50             		        db  8,33   ,"PROGRAMMER"
+1278 0848 0A 0F 49             		        db 10,15   ,"ISKRA 1080 TARTU"
+1279 085A 0A 21 41             		        db 10,33   ,"ALEKSEI MOROZOV"
+1280 086B 0C 0F 49             		        db 12,15   ,"IBM CGA"
+1281 0874 0C 21 45             		        db 12,33   ,"ENG AN JIO"
+1282 0880 0D 0F 52             		        db 13,15   ,"RAM RESIDENT"
+1283 088E 0D 21 45             		        db 13,33   ,"ERICK JAP"
+1284 0899 0E 0F 54             		        db 14,15   ,"TANDY"
+1285 08A0 0E 21 42             		        db 14,33   ,"BILLY SUTYONO"
+1286 08AF 0F 0F 49             		        db 15,15   ,"IBM EGA"
+1287 08B8 0F 21 41             		        db 15,33   ,"ARYANTO WIDODO"
+1288 08C8 11 0F 47             		        db 17,15   ,"GRAPHICS"
+1289 08D2 11 21 44             		        db 17,33   ,"DAN GUERRA"
+1290 08DE 12 0F 50             		        db 18,15   ,"PRODUCT MANAGER"
+1291 08EF 12 21 52             		        db 18,33   ,"R. ANTON WIDJAJA"
+1292 0901 13 0F 50             		        db 19,15   ,"PRODUCER"
+1293 090B 13 21 53             		        db 19,33   ,"SEAN B. BARGER"
+1294 091B 00                   		        db 0
+1298 091C                      		.include "unmlz.inc"
+0001 091C                      		unmlz:		;push	b
+0002 091C 3E 80                				mvi	a, 80h
+0003 091E                      		UNLD:
+0004 091E 32 ED 09             				sta	unmlz_1
+0005 0921 1A                   				ldax	d
+0006 0922 13                   				inx	d
+0007 0923 C3 2F 09             				jmp	UNSTA
+0009 0926 7E                   		UNST3:		mov	a, m
+0010 0927 23                   				inx	h
+0011 0928 02                   				stax	b
+0012 0929 03                   				inx	b
+0014 092A 7E                   		UNST2:		mov	a, m
+0015 092B 23                   				inx	h
+0016 092C 02                   				stax	b
+0017 092D 03                   				inx	b
+0019 092E 7E                   		UNST1:		mov	a, m
+0021 092F 02                   		UNSTA:		stax	b
+0022 0930 03                   				inx	b
+0024 0931 3A ED 09             		ULOOP:		lda	unmlz_1
+0025 0934 87                   				add	a
+0026 0935 C2 3B 09             				jnz	L1
+0027 0938 1A                   				ldax	d
+0028 0939 13                   				inx	d
+0029 093A 17                   				ral
+0031 093B DA 1E 09             		L1:		jc	UNLD
+0032 093E 87                   				add	a
+0033 093F C2 45 09             				jnz	L3
+0034 0942 1A                   				ldax	d
+0035 0943 13                   				inx	d
+0036 0944 17                   				ral
+0038 0945 DA 6B 09             		L3:		jc	UN2
+0039 0948 87                   				add	a
+0040 0949 C2 4F 09             				jnz	L2
+0041 094C 1A                   				ldax	d
+0042 094D 13                   				inx	d
+0043 094E 17                   				ral
+0045 094F DA 5F 09             		L2:		jc	UN1
+0046 0952 21 FF 3F             				lxi	h, 3FFFh
+0047 0955 CD B6 09             				call	GETBITS
+0048 0958 32 ED 09             				sta	unmlz_1
+0049 095B 09                   				dad	b
+0050 095C C3 2E 09             				jmp	UNST1
+0054 095F 32 ED 09             		UN1:		sta	unmlz_1
+0055 0962 1A                   				ldax	d
+0056 0963 13                   				inx	d
+0057 0964 6F                   				mov	l, a
+0058 0965 26 FF                				mvi	h, 0FFh
+0059 0967 09                   				dad	b
+0060 0968 C3 2A 09             				jmp	UNST2
+0064 096B 87                   		UN2:		add	a
+0065 096C C2 72 09             				jnz	L4
+0066 096F 1A                   				ldax	d
+0067 0970 13                   				inx	d
+0068 0971 17                   				ral
+0070 0972 DA 7C 09             		L4:		jc	UN3
+0071 0975 CD CB 09             				call	GETBIGD
+0072 0978 09                   				dad	b
+0073 0979 C3 26 09             				jmp	UNST3
+0077 097C 26 00                		UN3:		mvi	h, 0
+0079 097E 24                   		UN3A:		inr	h
+0080 097F 87                   				add	a
+0081 0980 C2 86 09             				jnz	L5
+0082 0983 1A                   				ldax	d
+0083 0984 13                   				inx	d
+0084 0985 17                   				ral
+0086 0986 D2 7E 09             		L5:		jnc	UN3A
+0087 0989 F5                   				push	psw
+0088 098A 7C                   				mov	a, h
+0089 098B FE 08                				cpi	8
+0090 098D D2 B4 09             				jnc	UNEXIT
+0091 0990 3E 00                				mvi	a, 0
+0093 0992 1F                   		L5B:		rar
+0094 0993 25                   				dcr	h
+0095 0994 C2 92 09             				jnz	L5B
+0096 0997 67                   				mov	h, a
+0097 0998 2E 01                				mvi	l, 1
+0098 099A F1                   				pop	psw
+0099 099B CD B6 09             				call	GETBITS
+0100 099E 23                   				inx	h
+0101 099F 23                   				inx	h
+0102 09A0 E5                   				push	h
+0103 09A1 CD CB 09             				call	GETBIGD
+0104 09A4 EB                   				xchg
+0105 09A5 E3                   				xthl
+0106 09A6 EB                   				xchg
+0107 09A7 09                   				dad	b
+0109 09A8 7E                   		LDIR:		mov	a, m
+0110 09A9 23                   				inx	h
+0111 09AA 02                   				stax	b
+0112 09AB 03                   				inx	b
+0113 09AC 1D                   				dcr	e
+0114 09AD C2 A8 09             				jnz	LDIR
+0115 09B0 D1                   				pop	d
+0116 09B1 C3 31 09             				jmp	ULOOP
+0120 09B4 F1                   		UNEXIT:		pop	psw
+0122 09B5 C9                   				ret
+0126 09B6 87                   		GETBITS:	add	a
+0127 09B7 C2 BD 09             				jnz	L7
+0128 09BA 1A                   				ldax	d
+0129 09BB 13                   				inx	d
+0130 09BC 17                   				ral		
+0131 09BD DA C5 09             		L7:		jc	GETB1
+0132 09C0 29                   				dad	h
+0133 09C1 D8                   				rc
+0134 09C2 C3 B6 09             				jmp	GETBITS
+0138 09C5 29                   		GETB1:		dad	h
+0139 09C6 2C                   				inr	l
+0140 09C7 D8                   				rc
+0141 09C8 C3 B6 09             				jmp	GETBITS
+0145 09CB 87                   		GETBIGD:	add	a
+0146 09CC C2 D2 09             				jnz	L8
+0147 09CF 1A                   				ldax	d
+0148 09D0 13                   				inx	d
+0149 09D1 17                   				ral
+0151 09D2 DA DE 09             		L8:		jc	GETBD1
+0152 09D5 32 ED 09             				sta	unmlz_1
+0153 09D8 1A                   				ldax	d
+0154 09D9 13                   				inx	d
+0155 09DA 6F                   				mov	l, a
+0156 09DB 26 FF                				mvi	h, 0FFh
+0157 09DD C9                   				ret
+0161 09DE 21 FF 1F             		GETBD1:		lxi	h, 1FFFh
+0162 09E1 CD B6 09             				call	GETBITS
+0163 09E4 32 ED 09             				sta	unmlz_1
+0164 09E7 65                   				mov	h, l
+0165 09E8 25                   				dcr	h
+0166 09E9 1A                   				ldax	d
+0167 09EA 13                   				inx	d
+0168 09EB 6F                   				mov	l, a
+0169 09EC C9                   				ret
+0171 09ED 00                   		unmlz_1: .db 0
+1299 09EE                      		logo:
+1300 09EE                      		.include "graph/logo.inc"
+0002 09EE 00 61 E2             		  .db 0,97,226,255,255,3,2,136,255,207,48,90,63,92,90,128,192,240,120,248,244,252,255,159,220,255,156,152,56,48,199,112,224,217,192,128,44,223,56,120,123,248,32,255,108,243,56,27,220,90,128,248,255,126,63,15,7,217,255,15,201,31,63,240,81
+0003 0A2F FE F1 E3             		  .db 254,241,227,199,15,62,120,240,202,111,85,1,3,123,227,254,252,248,224,7,15,145,180,108,153,202,150,7,33,87,255,114,240,1,15,127,252,217,170,227,3,88,230,254,55,169,90,31,138,240,217,224,128,203,116,15,199,86,92,129,15,235,31,124,240
+0004 0A70 EC 01 8F             		  .db 236,1,143,37,227,233,127,131,123,90,192,193,209,231,239,135,223,54,30,240,99,81,192,183,255,30,7,31,63,188,127,231,62,249,251,60,250,23,28,255,94,236,63,31,7,111,248,14,192,64,199,51,252,244,25,123,65,62,58,26,48,63,96,248,232
+0005 0AB1 BC B8 EA             		  .db 188,184,234,195,165,90,1,156,255,102,151,225,155,113,163,255,3,216,1,207,83,28,119,156,244,62,20,249,205,199,195,60,131,114,212,158,199,15,30,126,252,105,4,192,188,31,241,121,225,224,160,152,117,237,104,240,48,133,71,255,125,13,148,90,218
+0006 0AF2 B6 AE 8C             		  .db 182,174,140,254,233,137,113,23,158,227,38,180,15,236,152,128,166,243,245,127,252,191,91,0,224,3,254,120,236,208,112,53,48,90,188,255,205,109,90,85,106,70,254,233,8,56,137,96,30,148,124,98,83,94,36,119,151,205,211,180,242,129,131,143,135
+0007 0B33 C6 23 D4             		  .db 198,35,212,126,35,39,254,12,24,240,186,248,195,5,90,15,125,54,132,201,255,3,132,99,8,90,2,226,35,108,219,95,63,254,197,97,244,183,186,206,131,193,96,71,90,66,13,196,141,234,241,254,132,252,72,236,120,175,177,91,253,143,204,192,104
+0008 0B74 FF 61 61             		  .db 255,97,97,29,158,90,142,129,139,128,206,124,250,179,251,21,190,180,61,126,35,255,62,253,30,15,135,193,112,48,90,8,136,248,192,96,63,250,28,6,243,30,10,155,255,248,254,111,199,57,231,217,195,129,253,79,214,224,240,155,107,174,255,248,251
+0009 0BB5 E0 35 5A             		  .db 224,53,90,204,254,48,197,138,53,58,85,186,145,90,32,196,235,14,28,120,238,178,229,224,126,231,209,1,255,235,120,60,14,224,180,120,95,206,15,11,204,52,241,104,15,255,29,56,57,113,115,227,231,199,228,207,143,159,164,215,163,124,221,85,242
+0010 0BF6 54 FF 1F             		  .db 84,255,31,252,255,223,227,199,227,115,218,113,167,255,115,56,207,159,126,217,17,79,90,65,67,70,25,255,118,200,48,201,133,85,21,84,241,44,131,112,96,248,97,99,111,255,30,92,216,16,224,39,247,255,163,67,31,161,160,31,176,184,193,190,183
+0011 0C37 29 FF F6             		  .db 41,255,246,224,22,64,58,48,165,231,142,109,231,196,6,14,12,252,28,24,57,49,115,99,166,110,112,31,7,203,251,103,254,49,206,234,194,11,140,254,255,1,231,14,57,230,220,50,197,239,146,104,235,107,255,0,239,249,33,136,168,255,194,52,83
+0012 0C78 E3 0F 08             		  .db 227,15,8,10,254,154,242,7,251,138,170,63,38,81,255,193,191,48,254,116,106,84,105,85,233,210,0,216,164,212,223,72,168,88,144,80,203,160,32,68,28,44,67,88,193,192,198,88,197,249,232,161,245,63,109,32,80,136,1,7,222,252,249,38,252
+0013 0CB9 72 06 56             		  .db 114,6,86,241,255,16,215,223,76,254,144,224,255,145,94,113,31,17,21,252,53,228,10,241,143,117,159,145,64,196,95,235,58,84,144,254,104,8,82,223,81,107,83,106,87,129,98,102,27,110,68,3,77,73,227,93,74,82,235,84,252,187,170,56,124
+0014 0CFA BC 9D BC             		  .db 188,157,188,193,130,64,163,201,244,134,196,12,255,80,233,207,227,118,244,233,127,250,127,128,224,120,156,111,253,19,204,163,185,180,183,52,255,0,247,71,166,130,255,68,57,20,124,72,84,255,214,147,40,199,66,58,255,60,129,122,90,234,85,42,117
+0015 0D3B 74 FE 35             		  .db 116,254,53,186,21,254,227,85,138,93,124,221,170,197,110,69,111,53,38,55,34,248,23,18,19,10,9,241,5,228,2,173,91,4,133,255,247,145,253,229,115,51,133,11,255,243,57,90,185,255,97,193,1,115,60,78,19,205,254,34,57,44,87,214,152
+0016 0D7C D5 E7 FF             		  .db 213,231,255,85,0,93,156,127,71,72,74,255,255,82,37,140,180,4,148,20,255,150,179,184,175,164,165,37,41,255,162,63,191,32,42,20,26,21,198,10,13,206,5,6,254,3,2,182,252,197,187,18,120,237,4,56,64,172,220,180,54,194,159,51,67
+0017 0DBD C7 CE 5A             		  .db 199,206,90,243,206,255,189,115,238,153,116,199,149,37,198,85,165,248,160,84,168,254,0,208,246,46,247,240,251,82,170,251,139,45,255,149,6,14,15,155,241,192,112,96,140,8,7,25,51,103,246,110,216,176,96,16,243,11,147,146,59,255,231,2,10
+0018 0DFE 0B 68 26             		  .db 11,104,38,111,255,13,60,29,120,57,244,249,255,102,125,180,107,169,158,249,129,3,60,253,115,230,157,50,229,138,235,102,247,45,90,8,29,62,90,31,25,176,224,64,4,16,108,40,56,68,255,143,17,19,241,255,3,254,198,228,124,255,57,68,238
+0019 0E3F 64 99 FF             		  .db 100,153,255,47,138,28,160,62,34,181,156,47,244,108,93,240,192,41,89,255,193,223,14,162,136,255,64,114,16,255,201,139,31,252,251,230,76,177,241,224,47,183,53,178,32,191,254,21,170,10,251,255,223,186,24,28,62,244,51,97,224,192,90,133,160
+0020 0E80 70 FE 18             		  .db 112,254,24,12,132,230,51,29,15,199,247,40,207,3,231,40,178,199,123,77,252,97,81,255,138,191,90,4,8,201,248,60,207,252,119,25,110,115,64,127,40,213,12,159,207,180,16,100,48,56,60,240,54,179,241,112,12,215,128,126,240,60,7,194,77
+0021 0EC1 7D 88 21             		  .db 125,136,33,162,163,178,45,185,90,81,175,133,70,255,127,51,118,192,240,98,224,255,63,158,103,57,206,3,249,216,255,80,48,16,144,208,240,32,193,253,195,135,136,159,53,234,232,90,34,224,255,28,30,158,219,217,120,56,3,228,63,216,30,7,73
+0022 0F02 EC 9B 0E             		  .db 236,155,14,4,122,7,237,28,15,133,253,194,126,246,64,192,248,115,90,231,121,139,156,51,133,204,241,200,246,127,244,127,224,196,142,27,59,189,123,99,36,11,37,254,255,253,35,47,31,191,181,53,63,136,183,31,188,220,174,226,87,251,252,13,172
+0023 0F43 FB 54 A8             		  .db 251,84,168,80,160,64,8,181,131,240,251,128,252,140,204,120,9,136,99,39,89,255,159,176,101,63,90,93,230,241,226,227,193,199,201,156,79,244,31,14,70,227,247,177,184,188,254,37,90,17,254,2,251,60,251,40,69,130,11,170,144,254,85,94,250
+0024 0F84 7B FE 57             		  .db 123,254,87,252,143,16,240,155,224,255,64,99,255,16,127,138,124,49,185,153,220,255,12,181,4,250,221,194,173,198,172,230,242,126,255,226,198,220,248,240,196,30,208,224,248,204,230,150,255,206,180,139,102,99,146,28,156,255,136,193,225,227,115,55,23
+0025 0FC5 8F C2 DF             		  .db 143,194,223,224,244,58,24,28,29,255,15,59,115,247,231,194,191,2,124,18,99,90,68,98,14,90,42,29,7,198,54,215,253,255,211,204,6,63,115,177,185,220,237,110,96,192,175,236,7,93,144,117,80,0,255,38,87,93,133,134,47,185,65,120,228
+0026 1006 BA E3 6B             		  .db 186,227,107,241,12,145,167,90,119,251,189,31,240,48,210,252,254,198,192,157,19,126,63,31,30,187,255,255,255,172,251,177,105,201,159,24,255,20,26,31,50,63,122,15,10,158,13,189,14,7,6,180,167,194,79,255,62,254,99,97,49,63,24,12,182
+0027 1047 1F ED 1C             		  .db 31,237,28,128,137,66,182,112,254,170,50,51,221,27,232,224,248,55,209,104,127,99,68,187,219,119,12,14,139,29,238,103,60,85,86,215,255,198,171,86,172,248,176,199,224,128,97,117,255,245,252,198,195,99,179,158,124,138,209,155,255,229,225,199,142
+0028 1088 D4 9C 18             		  .db 212,156,24,26,45,49,255,120,56,253,28,142,199,241,160,91,32,60,231,206,140,28,184,227,255,11,151,233,254,113,235,152,90,92,149,79,90,4,12,28,60,223,62,63,250,182,129,118,86,124,30,6,71,146,122,246,36,125,255,63,32,31,10,117,68
+0029 10C9 A9 FF 8F             		  .db 169,255,143,188,90,222,110,55,51,123,225,95,190,135,170,172,177,171,254,219,109,238,216,172,47,240,70,144,1,111,84,142,255,40,248,122,204,186,50,15,90,105,28,73,96,206,241,6,28,56,120,213,223,158,254,12,3,193,224,92,43,90,251,213,106
+0030 110A 35 1A 0D             		  .db 53,26,13,11,42,102,223,127,42,204,108,102,243,49,142,24,197,164,11,206,53,172,211,137,110,150,113,246,35,35,22,49,30,171,60,162,152,255,255,14,190,207,195,3,112,56,184,15,98,195,134,255,113,48,120,94,15,12,6,236,42,139,76,72,247
+0031 114B A0 0E 3E             		  .db 160,14,62,126,125,150,140,64,202,188,216,255,140,23,63,71,255,96,246,48,144,216,248,250,132,143,120,96,97,73,255,157,182,42,10,239,255,102,119,51,153,219,221,207,172,90,254,43,48,255,103,126,90,126,115,51,57,217,140,200,200,56,246,7,20
+0032 118C 98 FF 33             		  .db 152,255,51,191,90,248,152,156,206,199,253,218,96,48,249,140,132,57,63,124,95,79,219,229,252,6,119,90,251,195,129,31,204,127,97,77,89,98,198,255,12,111,90,120,193,255,199,216,230,124,114,191,96,192,90,90,60,254,126,255,225,177,57,31,0
+0033 11CD B4 03 C0             		  .db 180,3,192,151,47,90,97,120,63,99,245,3,15,28,180,204,241,96,16
+1301 11E0                      		level1:
+1302 11E0                      		.include "graph/level1.inc"
+0002 11E0 FF C7 80             		  .db 255,199,128,254,19,8,239,29,137,191,248,220,251,243,163,80,162,156,82,252,3,211,8,112,28,215,170,119,105,221,254,79,250,181,74,29,42,140,55,212,252,229,238,0,187,255,17,221,255,64,131,15,62,249,224,128,34,22,232,29,226,232,252,40,7
+0003 1221 F4 08 10             		  .db 244,8,16,236,96,128,0,125,255,128,143,192,224,178,96,68,254,241,176,203,93,49,255,180,0,221,32,119,170,85,46,254,0,8,10,220,0,99,239,128,150,83,166,252,115,0,81,42,198,80,40,255,3,7,31,124,242,194,130,2,24,88,186,229,156
+0004 1262 27 FE 11             		  .db 39,254,17,229,1,6,246,8,16,32,192,40,7,255,224,240,120,188,94,175,87,171,115,146,213,234,246,245,250,253,254,163,254,126,252,236,248,224,128,29,92,0,9,238,237,46,131,250,249,36,11,208,248,252,248,239,239,170,117,96,0,223,171,16,252
+0005 12A3 19 26 FC             		  .db 25,38,252,83,0,69,170,123,254,168,64,255,161,7,15,62,248,226,202,27,222,106,155,254,129,154,152,226,0,248,104,126,249,2,4,24,32,64,216,46,7,64,32,144,19,174,255,151,171,120,41,8,253,8,255,78,255,127,191,95,255,188,244,254,158
+0006 12E4 F8 57 AF             		  .db 248,87,175,92,184,188,192,193,184,0,207,6,248,215,223,250,169,86,7,2,5,25,169,252,198,236,83,0,21,168,100,63,254,16,160,3,15,63,124,253,249,230,153,38,217,102,8,254,146,93,153,219,216,50,255,80,169,178,52,168,127,84,0,140,132
+0007 1325 FC A5 31             		  .db 252,165,49,42,170,255,250,155,230,6,127,45,8,245,127,169,250,255,254,127,122,254,125,64,130,236,248,240,192,26,223,0,220,253,249,169,80,140,168,102,252,1,248,216,6,116,171,219,191,250,250,181,112,160,208,25,169,252,156,0,206,85,162,254,21
+0008 1366 C2 7C FC             		  .db 194,124,252,165,18,213,82,97,2,3,84,192,255,1,135,31,126,252,242,193,6,185,25,0,181,164,189,255,21,175,13,174,179,249,168,241,229,110,14,248,46,245,251,0,99,254,206,8,50,255,126,242,219,223,244,87,175,94,184,112,216,224,192,53,246
+0009 13A7 00 D5 97             		  .db 0,213,151,88,127,27,8,176,252,191,74,49,42,93,154,153,252,207,0,84,10,244,14,241,3,12,15,11,239,0,1,254,15,250,12,3,14,240,8,223,234,63,254,248,247,227,134,25,239,45,255,69,159,0,227,201,156,63,42,70,0,158,0,93,6
+0010 13E8 67 F9 00             		  .db 103,249,0,252,242,109,228,246,230,66,228,254,79,209,243,188,8,248,248,240,160,96,192,128,236,28,60,0,89,105,38,190,115,0,81,40,252,71,56,96,152,120,232,123,0,192,254,127,120,152,96,184,7,8,133,255,192,240,248,62,31,199,97,152,9
+0011 1429 CE FF 50             		  .db 206,255,80,168,252,93,255,239,0,196,144,56,124,57,248,254,174,120,35,14,4,89,252,102,8,103,30,242,232,106,228,65,0,161,234,255,127,63,58,21,26,13,15,184,7,255,193,173,0,220,184,169,248,201,51,252,185,0,68,156,169,252,66,164,8
+0012 146A A5 42 05             		  .db 165,66,5,42,220,5,129,5,251,159,71,145,100,152,189,0,222,114,255,84,219,255,0,143,39,115,248,168,1,5,52,132,213,243,254,60,8,220,12,143,232,209,240,10,231,31,15,0,11,3,1,96,193,239,0,93,252,249,168,185,81,254,0,129,113
+0013 14AB D9 00 B9             		  .db 217,0,185,252,20,219,67,252,107,3,198,2,1,106,252,98,252,0,129,40,8,255,133,224,240,252,62,31,135,97,238,152,110,153,57,254,0,173,163,45,255,127,121,0,135,39,102,228,248,118,235,0,87,235,4,200,38,254,219,204,250,255,7,248,95
+0014 14EC 9D 1F 09             		  .db 157,31,9,0,1,131,102,111,0,213,243,144,51,255,16,218,181,112,168,216,25,169,252,137,112,0,79,34,5,130,225,115,5,71,81,246,96,88,102,89,204,254,64,127,8,25,179,16,255,8,115,255,5,6,28,199,53,3,215,10,8,242,0,175,0
+0015 152D 22 EC F6             		  .db 34,236,246,18,250,245,234,222,250,114,8,255,223,223,248,215,235,253,62,7,176,1,33,181,0,173,241,82,23,10,29,154,153,252,207,0,20,10,132,224,254,248,252,63,31,199,193,192,56,167,255,253,189,140,0,236,51,0,176,14,178,6,61,16,161
+0016 156E F4 7B BB             		  .db 244,123,187,16,111,251,149,106,213,171,215,253,254,127,104,254,109,229,248,255,244,117,62,15,3,96,181,137,0,10,32,100,172,248,252,33,231,0,64,128,192,25,169,252,156,0,115,5,241,240,143,246,254,188,6,255,119,247,0,247,27,0,163,12,8
+0017 15AF E3 04 02             		  .db 227,4,2,182,252,53,2,184,254,255,228,245,1,15,5,3,10,21,27,45,26,140,29,19,199,254,248,13,14,174,7,142,24,193,222,223,0,92,126,124,40,84,72,254,0,80,116,40,92,252,237,49,16,51,252,36,0,99,244,26,220,90,255,222,123
+0018 15F0 1B FF F1             		  .db 27,255,241,91,90,0,94,164,127,232,179,27,29,56,96,24,6,235,239,2,83,255,25,48,92,98,48,0,62,80,248,14,179,40,47,255,32,142,46,19,3,29,248,41,97,19,216,238,15,104,0,93,98,96,121,139,255,9,21,48,0,63,76,0,15
+0019 1631 D3 00 03             		  .db 211,0,3,244,0,192,253,48,0,63,76,0,15,211,0,3,244,0,192,253,48,0,63,76,0,15,211,0,3,244,0,192,253,48,0,63,76,0,15,211,0,3,244,0,192,253,48,0,63,94,0,240,247,4,228,62,244,132,49,255,96,118,54,248,247
+0020 1672 F0 81 00             		  .db 240,129,0,196,98,230,248,7,235,248,248,243,248,83,163,80,162,82,144,0,160,115,64,208,150,114,252,25,35,248,2,227,3,0,10,124,252,98,162,99,160,105,163,252,48,248,83,9,169,252,129,82,115,106,240,55,252,115,26,240,172,232,114,180,216
+0021 16B3 03 0C 02             		  .db 3,12,2,82,130,124,145,120,34,241,35,32,142,255,48,50,60,51,64,17,176,230,168,31,152,248,219,0,63,191,233,85,170,213,254,0,10,247,5,221,235,252,119,223,252,173,90,55,42,29,25,169,252,169,236,186,228,74,205,54,228,236,145,65,15
+0022 16F4 89 52 99             		  .db 137,82,153,96,252,1,170,81,248,65,194,108,192,121,242,248,0,153,98,240,113,252,25,32,191,2,1,0,129,66,161,240,208,105,50,25,37,1,244,150,252,14,34,15,5,10,37,25,24,252,42,113,251,133,126,240,13,168,28,30,85,0,128,90,255
+0023 1735 99 FC AB             		  .db 153,252,171,0,222,52,228,221,0,68,255,6,137,86,153,102,156,96,157,106,254,243,29,32,9,6,30,129,255,64,160,208,104,52,90,13,86,252,163,69,128,65,160,80,203,254,0,239,82,254,50,246,3,244,236,168,80,8,128,0,151,171,24,248,66
+0024 1776 FC 66 86             		  .db 252,102,134,0,39,0,254,25,38,25,44,8,128,144,8,211,170,34,84,68,4,254,95,166,24,64,30,244,64,246,26,144,246,234,114,252,193,193,0,252,31,84,168,164,85,254,1,40,221,20,117,252,114,46,118,239,120,28,84,7,2,5,205,76,252
+0025 17B7 D5 10 AB             		  .db 213,16,171,148,228,102,25,0,95,16,241,70,163,77,136,184,170,76,168,223,169,65,163,71,175,141,15,79,198,174,78,54,242,64,4,96,0,162,255,133,75,254,0,58,126,93,254,215,236,0,213,112,140,58,212,252,205,108,0,202,149,211,228,119,0
+0026 17F8 80 48 04             		  .db 128,72,4,62,8,22,67,69,64,63,74,68,72,24,64,15,254,202,133,128,206,16,32,254,80,42,140,34,143,192,0,42,184,32,254,128,246,53,88,246,42,58,128,0,142,238,18,8,248,217,248,255,222,170,117,28,196,189,74,198,42,93,106,252,103
+0027 1839 72 00 5A             		  .db 114,0,90,205,55,228,1,0,1,103,151,130,49,28,3,2,241,6,4,254,8,9,24,16,0,49,252,192,2,253,44,250,81,86,1,96,69,113,0,146,190,108,4,98,198,228,230,0,31,24,85,56,244,0,47,81,169,80,168,27,1,248,10,217,4
+0028 187A 70 0B D8             		  .db 112,11,216,94,66,10,253,216,222,169,191,25,16,134,228,103,154,0,30,255,243,3,192,224,199,240,248,182,252,125,255,248,240,224,192,128,129,28,0,111,210,0,219,227,54,126,27,252,242,171,25,224,0,44,227,228,63,228,0,23,177,166,39,255,254
+0029 18BB 18 F0 60             		  .db 24,240,96,70,172,0,9,238,181,0,88,28,234,103,207,0,4,26,38,153,133,128,170,203,85,162,139,20,31,255,232,85,171,80,160,9,143,249,247,131,255,108,0,189,49,186,0,212,0,153,253,254,10,17,170,21,168,140,151,0,156,145,250,194,84
+0030 18FC 28 19 81             		  .db 40,25,129,5,219,0,249,47,161,0,95,113,153,0,187,252,241,85,64,128,192,154,153,252,222,0,101,25,228,184,0,192,70,153,155,69,224,138,22,79,0,2,6,42,21,10,236,0,3,1,26,254,0,73,255,16,255,98,111,248,0,248,240,163,89
+0031 193D 6B 11 58             		  .db 107,17,88,133,1,113,162,7,129,181,170,123,254,10,192,106,64,85,254,192,193,240,86,26,74,115,213,17,221,98,79,154,14,8,16,224,180,192,214,58,3,7,60,15,123,31,150,255,191,134,255,79,241,255,127,63,246,31,159,72,254,236,241,127,255
+0032 197E 17 4C FF             		  .db 23,76,255,112,0,90,225,139,41,28,44,254,15,127,192,64,106,254,177,127,177,0,187,106,247,159,17,228,1,86,168,16,187,160,252,250,184,186,187,178,255,223,6,127,31,15,135,67,244,161,80,168,84,188,255,213,234,117,58,29,26,13,14,220,5
+0033 19BF 06 FE FD             		  .db 6,254,253,4,8,3,7,31,127,131,168,0,240,249,9,254,129,6,16,46,10,8,252,128,240,14,140,20,243,254,31,254,0,48,192,151,254,193,56,254,2,0,50,31,1,86,172,24,161,251,67,135,23,55,247,79,159,14,6,7,81,0,84,41,218
+0034 1A00 C2 F5 F7             		  .db 194,245,247,122,29,14,7,121,2,81,227,255,244,121,254,63,248,168,80,163,71,159,127,96,222,0,103,131,248,108,16,246,2,248,10,8,171,254,248,8,125,0,3,238,12,51,140,16,254,246,60,204,32,1,34,17,132,15,254,36,24,61,85,169,160
+0035 1A41 E1 CF CA             		  .db 225,207,202,13,251,6,7,129,110,8,107,229,250,252,242,2,3,220,254,130,254,215,7,134,67,196,216,15,63,54,123,0,252,248,119,4,0,93,0,32,85,7,171,111,255,16,160,15,168,8,106,254,177,15,55,0,192,64,32,30,16,225,255,249,218
+0036 1A82 40 C0 7F             		  .db 64,192,127,252,4,19,185,76,0,10,211,64,2,254,0,255,140,66,141,204,143,0,171,32,103,254,234,253,62,127,134,250,100,249,250,183,143,244,115,161,71,143,174,31,48,233,100,71,0,127,54,139,42,189,0,84,91,183,128,225,0,246,110,254,98
+0037 1AC3 0E 00 F0             		  .db 14,0,240,14,67,89,10,46,254,67,14,240,200,240,246,23,16,160,254,255,179,150,0,213,223,12,179,1,60,248,22,106,53,254,59,242,220,246,1,129,65,196,254,161,187,162,117,183,67,190,183,95,159,63,88,93,56,249,0,105,201,178,255,255,196
+0038 1B04 1C 00 07             		  .db 28,0,7,56,97,219,86,2,189,254,130,97,56,7,191,32,244,204,94,4,254,130,252,48,27,84,168,64,235,0,207,82,251,161,81,160,24,178,10,252,0,204,227,242,205,232,15,228,253,200,53,63,230,149,202,197,226,224,240,113,255,131,98,0,168
+0039 1B45 C7 B9 00             		  .db 199,185,0,1,35,8,220,4,255,37,249,245,165,168,11,192,4,254,161,0,254,237,217,255,33,95,0,68,52,42,70,38,121,8,177,10,239,232,10,13,6,5,60,230,129,192,224,117,77,194,252,254,131,15,123,0,249,168,81,132,254,48,7,155,254
+0040 1B86 BB 10 FC             		  .db 187,16,252,6,4,85,254,252,132,28,0,91,0,232,50,196,51,254,230,0,2,16,231,254,0,127,82,101,36,0,212,251,204,155,161,254,65,66,12,51,111,51,250,253,248,192,139,96,224,106,9,96,207,214,0,94,109,0,128,249,0,7,218,172,4
+0041 1BC7 AC FE 07             		  .db 172,254,7,117,0,48,219,12,51,146,254,0,76,126,214,154,16,170,77,8,48,159,5,164,85,2,0,212,224,64,202,8,202,223,159,130,7,14,253,13,30,53,42,117,234,121,252,203,254,106,51,223,248,244,58,13,195,249,176,254,33,245,0,224,218
+0042 1C08 2A 20 AC             		  .db 42,32,172,254,224,89,0,64,106,255,111,135,0,125,16,184,250,192,30,64,193,53,16,198,238,68,49,170,252,252,249,224,128,26,245,6,212,168,80,241,2,173,128,13,254,188,248,189,254,26,251,141,195,240,252,255,2,39,32,0,246,63,160,32,171
+0043 1C49 FE 3F 16             		  .db 254,63,22,91,0,248,27,247,146,0,12,42,97,12,93,125,4,162,83,1,84,255,250,95,0,26,241,143,255,151,1,252,249,251,254,243,230,237,202,221,218,213,213,254,205,252,234,229,246,243,249,252,123,254,7,123,122,0,126,124,40,84,0,254,213
+0044 1C8A FE 01 80             		  .db 254,1,128,42,197,8,254,0,11,198,254,24,93,217,14,97,180,1,53,255,73,0,34,12,224,1,26,222,187,250,106,24,6,70,229,113,121,245,255,127,131,161,255,177,16,129,242,248,241,0,239,40,168,242,175,160,255,32,44,14,167,248,32,224,15
+0045 1CCB 6A 00 11             		  .db 106,0,17,24,254,29,199,255,152,11,169,0,129,250,0,96,126,152,0,31,166,0,7,233,0,129,250,0,96,126,152,0,31,166,0,7,233,0,129,250,0,96,126,152,0,31,166,0,7,233,0,129,250,0,96,126,152,0,31,166,0,7,233,0,129
+0046 1D0C FA 00 1B             		  .db 250,0,27,247,4,143,5,245,145,133,255,1,96,117,59,248,132,135,240,80,0,140,92,248,192,253,120,248,248,240,80,163,211,160,252,0,16,102,28,12,252,255,83,18,187,34,88,248,3,118,252,143,208,211,21,38,252,192,255,195,32,24,240,243,194
+0047 1D4D B0 43 31             		  .db 176,67,49,252,180,0,63,126,21,170,149,152,254,0,42,192,80,128,254,6,207,254,10,192,106,64,106,254,180,192,49,238,129,228,255,130,85,128,254,64,64,137,136,200,178,48,186,125,92,242,254,133,72,136,249,192,224,112,56,24,250,254,96,48,88
+0048 1D8E 08 10 00             		  .db 8,16,0,128,209,255,248,106,255,182,192,88,255,255,41,152,255,87,224,240,219,1,28,237,127,192,64,86,254,127,198,236,42,228,110,0,227,68,3,140,110,204,51,53,14,127,8,16,140,195,228,113,56,28,255,142,199,99,49,216,12,22,3,239,13
+0049 1DCF 00 01 F8             		  .db 0,1,248,234,70,255,31,196,18,255,7,255,192,131,48,0,192,254,221,0,2,201,140,19,0,254,136,76,118,8,224,115,97,8,132,102,255,14,8,0,252,251,84,168,150,254,0,198,254,238,44,248,10,8,213,254,248,106,236,98,102,228,111,246,0
+0050 1E10 83 E4 EE             		  .db 131,228,238,8,6,3,1,205,22,8,140,4,120,0,188,255,69,196,63,44,128,237,15,168,8,86,254,15,60,228,110,0,239,135,67,1,253,16,4,142,44,25,128,76,255,193,204,0,148,248,254,248,17,176,248,54,252,28,128,128,220,254,216,236,197
+0051 1E51 8D E4 C0             		  .db 141,228,192,0,88,1,225,9,220,27,33,248,71,199,98,66,89,132,51,2,43,133,0,241,177,255,185,236,139,27,228,153,0,9,20,32,255,154,96,255,224,71,255,240,143,248,252,29,132,134,36,14,93,0,198,80,169,137,168,1,93,6,1,54,252
+0052 1E92 AB 01 CB             		  .db 171,1,203,28,168,20,227,20,60,228,197,75,0,158,220,120,56,24,15,61,199,179,255,7,31,216,63,127,18,34,0,255,208,69,216,52,195,206,50,0,28,3,194,1,48,8,12,17,131,45,193,159,255,0,135,14,28,56,246,227,231,239,63,56,84
+0053 1ED3 60 FF D6             		  .db 96,255,214,0,29,243,0,16,12,218,48,204,110,55,224,12,56,8,14,16,7,173,129,157,255,0,131,7,124,255,150,115,228,55,230,246,15,253,0,97,205,223,0,150,0,168,0,48,53,24,249,0,7,10,108,255,35,244,228,6,12,156,118,179,102
+0054 1F14 D7 01 83             		  .db 215,1,131,104,236,239,255,193,251,182,0,248,95,68,0,111,208,0,123,63,160,32,85,254,63,177,236,137,25,228,153,0,140,204,213,0,198,6,135,245,254,7,176,255,241,244,131,195,99,211,0,128,192,193,240,248,96,213,182,242,1
+1303 1F51                      		end1:
+1304 1F51 
