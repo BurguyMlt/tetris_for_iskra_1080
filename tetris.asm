@@ -62,7 +62,7 @@ map2 db 10*20 dup(0FFh)
 figureO db 0
 figureA db 0
 figureC db 0
-score   dw 54321
+score   dw 0
 nextC   db 0
 nextO   db 0
 level   db 0
@@ -93,53 +93,38 @@ copy:
 ; Очистка экрана
         
 clearScreen:
-        call clearScreen1
+    call clearScreen1
+
+;-V-V-V----------------------------------------------------------------------
+; Очистка второй плоскости экрана (9000-BFFF)
+    
 clearScreen2:
-        lxi  h, 9000h
-        mvi  a, 0C0h
-clearScreen_1:
-        mvi  m, 0
-        inx  h
-        cmp  h
-        jnz  clearScreen_1
-        ret
-        
-clearScreen1:
-        lxi  h, 0D000h
-        mvi  a, 000h
-        jmp  clearScreen_1
+    lxi  h, 09000h
+    mvi  a, 0C0h
 
-;-------------------------------------------------------------------------------
+;-V-V-V----------------------------------------------------------------------
+; Очистка памяти
 
-drawBackgrond:
-    lxi d, 0C87Fh
-    lxi h, 08FFFh
-    lxi b, 080h
-    call copy
-    
-    call blackPalette
-    
-    lxi d, level1
-    lxi b, 09000h
-    call unmlz
-
-    lxi h, 0FFFFh
-    lxi d, 0EFFFh
-    lxi b, 03000h
-    call copy
-    
-    call initPalette
-
-    lxi d, 08FFFh
-    lxi h, 0C87Fh
-    lxi b, 080h
-    call copy    
-
+clearMem:
+    mvi  m, 0
+    inx  h
+    cmp  h
+    jnz  clearMem
     ret
 
 ;-------------------------------------------------------------------------------
+; Очистка первой плоскости экрана (В000-FFFF)
+        
+clearScreen1:
+    lxi  h, 0D000h
+    xra  a
+    jmp  clearMem
+
+;-------------------------------------------------------------------------------
+; Перерисовать весь экран
 
 redrawAll:
+    ; Перерисовать фон
     call drawBackgrond
     
     ; Перерисовать экран
@@ -156,6 +141,66 @@ redrawAll_1:
     call redrawMap
     call redrawScore
     jmp  redrawGameover
+
+;-------------------------------------------------------------------------------
+; Перерисовать фон
+
+drawBackgrond:
+    ; Сохраняем системные переменные
+    lxi d, 0C87Fh
+    lxi h, 08FFFh
+    lxi b, 080h
+    call copy
+    
+    ; Гасим экран
+    call blackPalette
+        
+    ; Получаем указатель на изображение уровня
+    lhld level
+    mvi  h, 0
+    dad  h
+    dad  h
+    dad  h
+    lxi  d, levels
+    dad  d
+    mov  e, m
+    inx  h
+    mov  d, m
+    
+    push h
+    
+    ; Распаковываем
+    lxi  b, 09000h
+    call unmlz
+
+    ; Переносим вторую плоскость
+    lxi h, 0FFFFh
+    lxi d, 0EFFFh
+    lxi b, 03000h
+    call copy
+    pop  h
+    
+    ; Восстанавливаем палитру
+    inx  h
+    mov  a, m
+    out  90h
+    inx  h
+    mov  a, m
+    out  91h
+    inx  h
+    mov  a, m
+    out  92h
+    inx  h
+    mov  a, m
+    out  93h
+
+    ; Восстанавливаем системные переменные
+    lxi d, 08FFFh
+    lxi h, 0C87Fh
+    lxi b, 080h
+    call copy    
+
+    ret
 
 ;-------------------------------------------------------------------------------
 ; Прерисовать новую фигуру
@@ -946,6 +991,8 @@ setLevel:
 ;-------------------------------------------------------------------------------
 
 checkLines:
+    mvi  a, 0C9h
+    sta  checkLines_3
     ; var f = false;
     ; var a = START + BPL * (HEIGHT - 1);
     lxi h, map + START + (BPL * (HEIGHT - 1))
@@ -964,9 +1011,10 @@ checkLines_1:
     lhld score
     inx  h
     shld score
-    call redrawScore
+    ; f = true;       
+    xra  a
+    sta  checkLines_3
     pop  h
-    ;         f = true;   
     ;         continue;
     jmp checkLines_1
 checkLines_2:    
@@ -979,14 +1027,30 @@ checkLines_2:
     sui (map + START + 1)
     mov a, h
     sbi (map + START + 1) / 256
-    jnc checkLines_1    
-    ; }
+    jnc checkLines_1 
     ; if(f) {
+checkLines_3:
+    ret       
     ;     redrawScore();
-    ;     var l = Math.floor(score/10);
-    ;     if(level < 8 && level < l) setLevel(l);
-    ; }
-    ret
+    call redrawScore
+    ; var l = Math.floor(score/10);
+    ; if(level < 8 && level < l) setLevel(l);
+    lhld score
+    xchg
+    lxi  h, 10
+    call _div
+    xra a
+    ora h
+    rnz
+    mov a, l
+    cpi LEVELS_COUNT
+    rnc
+    lda level
+    cmp l
+    rz
+    mov a, l
+    sta level
+    jmp redrawAll
 
 down:
     ; while(move(BPL, 0));
@@ -1145,7 +1209,7 @@ main_4:
 gameLoop:
     lda timer
     inr a
-    sta timer
+    sta timer ; by level
     jnz gameLoop_2
     call tick
 gameLoop_2:
@@ -1271,26 +1335,26 @@ _DIV4:	POP D
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-aStart: db  4,15+4 ,    "SPECTRUM HOLOBYTE PRESENTS"
-        db  6,15+11,          "T E T R I S"
-        db  8,15   ,"VERSION"
-        db  8,33   ,"PROGRAMMER"
-        db 10,15   ,"ISKRA 1080 TARTU"
-        db 10,33   ,"ALEKSEI MOROZOV"
-        db 12,15   ,"IBM CGA"
-        db 12,33   ,"ENG AN JIO"
-        db 13,15   ,"RAM RESIDENT"
-        db 13,33   ,"ERICK JAP"
-        db 14,15   ,"TANDY"
-        db 14,33   ,"BILLY SUTYONO"
-        db 15,15   ,"IBM EGA"
-        db 15,33   ,"ARYANTO WIDODO"
-        db 17,15   ,"GRAPHICS"
-        db 17,33   ,"DAN GUERRA"
-        db 18,15   ,"PRODUCT MANAGER"
-        db 18,33   ,"R. ANTON WIDJAJA"
-        db 19,15   ,"PRODUCER"
-        db 19,33   ,"SEAN B. BARGER"
+aStart: db  4,19,"SPECTRUM HOLOBYTE PRESENTS"
+        db  6,26,"T E T R I S"
+        db  8,15,"VERSION"
+        db  8,33,"PROGRAMMER"
+        db 10,15,"ISKRA 1080 TARTU"
+        db 10,33,"ALEKSEI MOROZOV"
+        db 12,15,"IBM CGA"
+        db 12,33,"ENG AN JIO"
+        db 13,15,"RAM RESIDENT"
+        db 13,33,"ERICK JAP"
+        db 14,15,"TANDY"
+        db 14,33,"BILLY SUTYONO"
+        db 15,15,"IBM EGA"
+        db 15,33,"ARYANTO WIDODO"
+        db 17,15,"GRAPHICS"
+        db 17,33,"DAN GUERRA"
+        db 18,15,"PRODUCT MANAGER"
+        db 18,33,"R. ANTON WIDJAJA"
+        db 19,15,"PRODUCER"
+        db 19,33,"SEAN B. BARGER"
         db 0
         
 ;----------------------------------------------------------------------------------------------------------------------
@@ -1298,8 +1362,22 @@ aStart: db  4,15+4 ,    "SPECTRUM HOLOBYTE PRESENTS"
 .include "unmlz.inc"
 logo:
 .include "graph/logo.inc"
+LEVELS_COUNT = 3
+
+; 1-желтый,5-зеленый,6-синий
+levels dw level1
+       db 15,1,4,0,0,0 ; черный, желтый, голубой, белый
+       dw level2
+       db 15,2,4,0,0,0 ; черный, красный, голубой, белый
+       dw level3
+       db 15,3,5,0,0,0 ; черный, красный, голубой, белый
+       
 level1:
 .include "graph/level1.inc"
+level2:
+.include "graph/level2.inc"
+level3:
+.include "graph/level3.inc"
 end1:
 make_binary_file "tetris.lvt", fileStart, end1
 .end
