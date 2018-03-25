@@ -1362,15 +1362,21 @@ aStart: db  4,19,"SPECTRUM HOLOBYTE PRESENTS"
 .include "unmlz.inc"
 logo:
 .include "graph/logo.inc"
-LEVELS_COUNT = 3
+LEVELS_COUNT = 6
 
-; 1-желтый,5-зеленый,6-синий
+; 0-белый,1-желтый,2-розовый,3-красный,4-голубой,5-зеленый,6-синий
 levels dw level1
-       db 15,1,4,0,0,0 ; черный, желтый, голубой, белый
+       db 15,3,4,0,0,0
        dw level2
-       db 15,2,4,0,0,0 ; черный, красный, голубой, белый
+       db 15,2,4,0,0,0
        dw level3
-       db 15,3,5,0,0,0 ; черный, красный, голубой, белый
+       db 15,3,5,0,0,0
+       dw level4
+       db 15,3,4,0,0,0
+       dw level5
+       db 15,3,4,0,0,0
+       dw level6
+       db 15,3,4,0,0,0
        
 level1:
 .include "graph/level1.inc"
@@ -1378,6 +1384,12 @@ level2:
 .include "graph/level2.inc"
 level3:
 .include "graph/level3.inc"
+level4:
+.include "graph/level4.inc"
+level5:
+.include "graph/level5.inc"
+level6:
+.include "graph/level6.inc"
 end1:
 make_binary_file "tetris.lvt", fileStart, end1
 .end
