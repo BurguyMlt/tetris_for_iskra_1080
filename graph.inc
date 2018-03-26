@@ -2,6 +2,11 @@ SYS_BACKUP_FROM = 0C800h
 SYS_BACKUP_SIZE = 80h
 SYS_BACKUP_TO   = 3h
 
+NEW_BACKUP_FROM = 0C000h
+
+OPCODE_XCHG = 0EBh
+OPCODE_NOP = 000h
+
 ;----------------------------------------------------------------------------
 ; Очистка экрана
 
@@ -64,10 +69,11 @@ drawBackgrond:
     mov  e, m
     inx  h
     mov  d, m
+    inx  h    
+    mov  a, m
+    sta  redrawNewFigure1_1
     inx  h
     shld palette
-
-    ;push h
 
     ; Распаковываем
     lxi  b, VIDEO_PAGE_1
@@ -86,6 +92,14 @@ drawBackgrond:
     lxi  b, SYS_BACKUP_SIZE
     call memcpy8back
 
+    mvi a, OPCODE_XCHG
+    sta clearNewFigure_2
+    sta clearNewFigure_3
+    call clearNewFigure
+    mvi a, OPCODE_NOP
+    sta clearNewFigure_2
+    sta clearNewFigure_3
+
     ret
 
 ;----------------------------------------------------------------------------------------------------------------------
@@ -101,6 +115,7 @@ palette = $+1
     xra  a
     ora  l
     rz
+    inx  h
     mov  a, m
     ora  b
     out  IO_PALETTE_0
@@ -122,8 +137,11 @@ palette = $+1
 ; Перерисовать текущий счет
 
 redrawScore:
-    ; Установить цвет фона 1, цвет текста 0
-    call negativeText_F798
+    lhld palette
+    mov  a, m
+    ora  a
+    cnz  negativeText_F798
+    cz   normalText_F793
 
     ; Переместить курсор в строку
     mvi  a, 1
@@ -165,31 +183,23 @@ redrawScore_1:
 ; Залить место экрана где выводится новая фигура
 
 clearNewFigure:
-    xra  a
-    lxi  d, 0B8F7h
+    lxi  h, NEW_BACKUP_FROM
+    lxi  d, 0B8F8h-48
     call clearNewFigure_0
-    cma
-    lxi  d, 0F8F7h
+    lxi  d, 0F8F8h-48
 clearNewFigure_0:
-    mvi  c, 48
+    mvi  b, 7
 clearNewFigure_1:
-    mov  h, d
-    mov  l, e
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    dcr  e
-    dcr  c
+    push d
+    mvi  c, 48
+clearNewFigure_2:
+    nop
+    call memcpy8
+clearNewFigure_3:
+    nop
+    pop  d
+    inr  d
+    dcr  b
     jnz  clearNewFigure_1
     ret
 
@@ -219,6 +229,7 @@ redrawNewFigure1:
     mov  d, a
 
     ; Рисование клетки черным цветом
+redrawNewFigure1_1 = $+1
     mvi  a, 0
     call drawCell
 

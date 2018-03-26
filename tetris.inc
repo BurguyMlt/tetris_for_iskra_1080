@@ -9,6 +9,7 @@ MAP_SIZE  = (START + (BPL * (HEIGHT + 1)))
 
 ;----------------------------------------------------------------------------------------------------------------------
 
+speeds         db 200,110,60,40,30,15 ; Скорости для каждого уровня
 timer          db 0
 lastPressedKey db 0
 figureA        db 0
@@ -292,6 +293,20 @@ move_2:
 ; hl - address
 
 deleteLine:
+    mvi  a, 7
+deleteLine_1:
+    push psw
+    push h
+    mvi  c, WIDTH
+    out  0B0h
+    call memset8
+    call redrawMap
+    pop  h
+    pop  psw
+    dcr  a
+    jnz  deleteLine_1
+
+
     ; a--;
     dcx  h
 
@@ -317,7 +332,9 @@ deleteLine_1:
 
     ;clearLine(START);
     lxi  h, map + START
-    call clearLine
+    xra  a
+    mvi  c, WIDTH
+    call memset8
 
     ; redrawMap();
 
@@ -372,24 +389,6 @@ newGame_1a:
 
     call  redrawAll
 
-    ret
-
-;-------------------------------------------------------------------------------
-
-down1:
-    ; if(move(BPL, 0)) return true;
-    lxi  b, BPL
-    call move
-    rnz
-
-    ; checkLines();
-    call checkLines
-
-    ; newFigure();
-    call newFigure
-
-    ; return false;
-    xra a
     ret
 
 ;-------------------------------------------------------------------------------
@@ -473,7 +472,7 @@ checkLines_3:
     ; if(level < 8 && level < l) setLevel(l);
     lhld score
     xchg
-    lxi  h, 10
+    lxi  h, 30
     call div16
     xra a
     ora h
@@ -488,10 +487,30 @@ checkLines_3:
     sta level
     jmp redrawAll
 
+;-------------------------------------------------------------------------------
+
+tick:
+    ; if(move(BPL, 0)) return true;
+    lxi  b, BPL
+    call move
+
+    rnz
+
+    ; checkLines();
+    call checkLines
+
+    ; newFigure();
+    call newFigure
+
+    ; return false;
+    ret
+
+
 down:
     ; while(move(BPL, 0));
     lxi  b, BPL
     call move
+
     jnz  down
 
     ; checkLines();
@@ -504,31 +523,30 @@ down:
     ;!!!!!!!!!!!!!!!!!!!!!!
     jmp gameLoop
 
-tick:
-    ;down1();
-    call down1
-
-    ;redrawMap();
-    call redrawMap
-
-    ret
-
 ;----------------------------------------------------------------------------------------------------------------------
 
 tetris:
     call newGame
 
 gameLoop:
-    lda gameOverFlag
-    ora a
+    lda  gameOverFlag
+    ora  a
     rnz
 
-    lda timer
-    inr a
-    sta timer ; by level
-    jnz gameLoop_2
+    lda  timer
+    dcr  a
+    jnz  gameLoop_2
+
     call tick
+
+    lhld level ; 0..5
+    mvi  h, 0
+    lxi  d, speeds
+    dad  d
+    mov  a, m
+
 gameLoop_2:
+    sta  timer ; by level
 
     ; Привязываем генератор случайных чисел к нажатиях клавиш пользователем.
     call rand
