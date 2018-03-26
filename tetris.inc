@@ -1,82 +1,34 @@
 map  db 232 dup(0)
-map2 db 200 dup(0) ;(0D000h - MAP2_SIZE)
-
-
-figures db 81,132,16,101,81,132,16,101,64,149,84,33,64,149,84,33,81,217,84,118,81,217,84,118,16,84,16,84,16,84,16,84,65,101,64,88,16,82,81,73,64,152,16,66,16,149,84,38,81,137,64,101,16,132,16,98
 
 // const
-CHECK = 255
-WIDTH = 10
-HEIGHT = 20
-BPL = WIDTH+1
-START = 1
-MAP_SIZE = (START + (BPL * (HEIGHT + 1)))
-MAP2_SIZE = (WIDTH * HEIGHT)
-
-timer db 0
-keybTimer db 0
-figureO db 0
-figureA db 0
-figureC db 0
-score   dw 0
-nextC   db 0
-nextO   db 0
-level   db 0
-levelBg db 2,2,3,2,0,0,2,2,2,4
-sCopy=0
-sLogo=1
-sMenu=2
-sGame=3
-sGameOver db 4
-state   db sLogo;
-delays  dw 1000,800,700,600,500,400,300,200,150
-timerId db 0
+WIDTH     = 10
+HEIGHT    = 20
+BPL       = WIDTH+1
+START     = 1
+MAP_SIZE  = (START + (BPL * (HEIGHT + 1)))
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-delay8000:
-    lxi  d, 08000h
-delay:
-    dcx  d
-    mov  a, d
-    ora  e
-    jnz  delay
-    ret
-
-;-------------------------------------------------------------------------------
-
-copy:
-        ldax d
-        mov m, a
-        dcx d
-        dcx h
-        dcx b
-        mov a, c
-        ora b
-        jnz copy
-        ret
+timer          db 0
+lastPressedKey db 0
+figureA        db 0
+figureO        db 0 ;  O+С должны быть подряд
+figureC        db 0
+nextO          db 0 ;  O+С должны быть подряд
+nextC          db 0
+score          dw 0
+level          db 0
+gameOverFlag   db 0
 
 ;-------------------------------------------------------------------------------
 ; Перерисовать весь экран
 
 redrawAll:
-    ; Перерисовать фон
     call drawBackgrond
-
-    ; Перерисовать экран
-    lxi  h, map2
-    mvi  a, 0FFh
-    mvi  c, MAP2_SIZE
-redrawAll_1:
-    mov  m, a
-    inx  h
-    dcr  c
-    jnz  redrawAll_1
-
+    call invalidatePlayfield
     call redrawNewFigure
     call redrawMap
     call redrawScore
-
     call paletteShow
     ret
 
@@ -85,11 +37,6 @@ redrawAll_1:
 
 redrawNewFigure:
     ; Залить цветом 1 место где выводится новая фигура
-    xra  a
-    lxi  d, 0B8F7h
-    call clearNewFigure
-    cma
-    lxi  d, 0F8F7h
     call clearNewFigure
 
     ; Нарисовать новую фигуру
@@ -97,125 +44,6 @@ redrawNewFigure:
     lda  nextO
     lxi  h, redrawNewFigure1
     call decodeFigureEx
-    ret
-
-;-------------------------------------------------------------------------------
-; Залить место экрана в одной плоскости где выводится новая фигура
-
-clearNewFigure:
-    mvi  c, 48
-clearNewFigure_1:
-    mov  h, d
-    mov  l, e
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    inr  h
-    mov  m, a
-    dcr  e
-    dcr  c
-    jnz  clearNewFigure_1
-    ret
-
-;-------------------------------------------------------------------------------
-; Нарисовать клетку новой фигуры.
-
-redrawNewFigure1:
-    push h
-    push d
-    push b
-
-    ; Расчет координаты Y
-    mov  a, e
-    add  a
-    add  a
-    mov  e, a
-    add  a
-    add  e
-    mov  e, a
-    mvi  a, 0F7h
-    sub  e
-    mov  e, a
-
-    ; Расчет координаты X
-    mov  a, d
-    adi  10
-    mov  d, a
-
-    ; Рисование клетки черным цветом
-    mvi  a, 0
-    call drawCell
-
-    pop  b
-    pop  d
-    pop  h
-
-    ; Продолжить рисование
-    xra  a
-    ret
-
-;-------------------------------------------------------------------------------
-; Перерисовать текущий счет
-
-redrawScore:
-    ; Установить цвет фона 1, цвет текста 0
-    call negativeText_F798
-
-    ; Переместить курсор в строку
-    mvi  a, 1
-    call setCursorY_F7DC
-
-    ; Столбец для вывода первого символа
-    mvi  b, 61
-
-    ; Очки в DE
-    lhld score
-    xchg
-
-redrawScore_1:
-    push b
-    ; Переместить крурсор в нужный столбец
-    push h
-    mov  a, b
-    call setCursorX_F7BE
-    pop  h
-    ; Разделить ВУ на 10
-    lxi  h, 10
-    call _DIV
-    ; Остаток от деления вывести на экран
-    push h
-    mov  a, e
-    adi  '0'
-    call drawChar1_F7FB
-    pop  d
-    pop  b
-    ; Положение следующего символа
-    dcr b
-    ; Если DE=0 выходим
-    mov  a, d
-    ora  e
-    jnz redrawScore_1
-    ret
-
-
-redrawGameover:
-    ; if(state == sGame) return;
-    lda  state
-    cpi  sGame
-    rz
-
-    ;ctx.textBaseline = "middle";
-    ;ctx.textAlign = "center";
-    ;ctx.fillStyle = colors[2];
-    ;ctx.fillText("Game Over",384/2,256/2);
     ret
 
 ;-------------------------------------------------------------------------------
@@ -298,6 +126,11 @@ decodeFigure1:
 ;-------------------------------------------------------------------------------
 ; return true;
 
+figures:
+    db 81,132,16,101,81,132,16,101,64,149,84,33,64,149,84,33,81,217,84,118
+    db 81,217,84,118,16,84,16,84,16,84,16,84,65,101,64,88,16,82,81,73,64
+    db 152,16,66,16,149,84,38,81,137,64,101,16,132,16,98
+
 decodeFigure:
     lda  figureO
 
@@ -349,23 +182,19 @@ gen_3:
 
 newFigureEx:
     ; figureO = nextO;
-    lda  nextO
-    sta  figureO
-
-    ; figureC = nextC;
-    lda  nextC
-    sta  figureC
+    lhld nextO
+    shld figureO
 
     ; figureA = START + ((WIDTH - 1) >> 1);
     mvi  a, 4
     sta  figureA
 
-    ; if(decodeFigure(checkFigure)) state = sGameOver;
+    ; if(decodeFigure(checkFigure)) gameOverFlag = 1;
     lxi  h, checkFigure
     call decodeFigure
     jz   newFigure_1
-    mvi  a, sGameOver
-    sta  state
+    mvi  a, 1
+    sta  gameOverFlag
 newFigure_1:
 
     ; decodeFigure(drawFigure);
@@ -384,22 +213,11 @@ newFigure:
     call redrawNewFigure
 
     ; redrawMap();
-    call redrawMap
-
-    ; redrawGameover();
-    jmp redrawGameover
+    jmp  redrawMap
 
 ;-------------------------------------------------------------------------------
 
-; b = d
-; c = r
-
 move:
-    ;if(state != sGame) return;
-    lda  state
-    cpi  sGame
-    rnz
-
     ; decodeFigure(clearFigure);
     push b
     lxi  h, clearFigure
@@ -529,8 +347,7 @@ newGame:
     sta  level
     sta  score + 0
     sta  score + 1
-    mvi  a, sGame
-    sta  state
+    sta  gameOverFlag
 
     ; for(a = 1, y = HEIGHT; y != 0; y--)
     ;    a = clearLine(a) + 1;
@@ -657,7 +474,7 @@ checkLines_3:
     lhld score
     xchg
     lxi  h, 10
-    call _div
+    call div16
     xra a
     ora h
     rnz
@@ -688,11 +505,6 @@ down:
     jmp gameLoop
 
 tick:
-    ;if(state != sGame) return;
-    lda  state
-    cpi  sGame
-    rnz
-
     ;down1();
     call down1
 
@@ -704,11 +516,13 @@ tick:
 ;----------------------------------------------------------------------------------------------------------------------
 
 tetris:
-    xra  a
-    sta  palette
     call newGame
 
 gameLoop:
+    lda gameOverFlag
+    ora a
+    rnz
+
     lda timer
     inr a
     sta timer ; by level
@@ -721,39 +535,16 @@ gameLoop_2:
 
     ; Получить код нажатой клавиши
     call inkey_FC12
-    mov  b, a
 
     ; Если таймер установлен
-    lda  keybTimer
-    ora  a
-    jz   gameLoop_1
-    ; Если таймер больше 1, уменьшаем и пропускаем
-    dcr  a
-    jnz  gameLoop_164
-    ;
-    mov  a, b
-    cpi  0FFh
-    jnz  gameLoop_17
-    xra  a
-gameLoop_164:
-    sta  keybTimer
-gameLoop_17:
-    mvi  b, 0FFh
-gameLoop_1:
-    mov  a, b
-
-    cpi  0FFh
-    jz   gameLoop_4
-    mvi  a, 2
-    sta  keybTimer
-    mov  a, b
-gameLoop_4:
-
-    ; Клавиша "Вправо"
-    cpi  13
-    jnz  gameLoop_185
-    call newGame
-    jmp  gameLoop
+    lhld lastPressedKey
+    cmp  l
+    jnz  gameLoop_1a
+    mvi  a, 0FFh
+    jmp  gameLoop_2a
+gameLoop_1a:
+    sta  lastPressedKey
+gameLoop_2a:
 
 gameLoop_185:
     ; Клавиша "Вверх"

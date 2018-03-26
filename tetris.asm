@@ -20,8 +20,96 @@ entry:
     ; Вступление
     call intro
 
+    ; Что бы не было видно мусора с неинициализированного экрана
+    xra  a
+    sta  palette
+
     ; Игра
-    jmp  tetris
+restartGame:
+    call tetris
+
+    ; Выводим надпись "GAME OVER"  ;!!!! Заменить на более красивую надпись
+    call normalText_F793
+    lxi  h, gameOverText
+    call drawText
+
+    ; Ждем нажатия Enter
+entry_1:
+    call rand
+    call inkey_FC12
+    cpi  13
+    jnz  entry_1
+
+    ;
+    jmp  restartGame
+
+gameOverText:
+    db  12,27,"GAME OVER",0
+
+;----------------------------------------------------------------------------------------------------------------------
+
+drawText_1:
+    call drawChar1_F7FB
+drawText:
+    mov  a, m
+    inx  h
+    ora  a
+    rz
+    cpi  32
+    jnc  drawText_1
+    call setCursorY_F7DC
+    mov  a, m
+    inx  h
+    call setCursorX_F7BE
+    jmp  drawText
+
+;----------------------------------------------------------------------------------------------------------------------
+
+pressAnyKey:
+    ; Ждем пока пользователь отпустит клавишу
+pressAnyKey_1:
+    call inkey_FC12
+    cpi  0FFh
+    jnz  pressAnyKey_1
+pressAnyKey_2:
+    call rand
+    call inkey_FC12
+    cpi  0FFh
+    jz   pressAnyKey_2
+    ret
+
+;-------------------------------------------------------------------------------
+
+memcpy8back:
+    ldax d
+    mov m, a
+    dcx d
+    dcx h
+    dcx b
+    mov a, c
+    ora b
+    jnz memcpy8back
+    ret
+
+;-------------------------------------------------------------------------------
+
+memset8:
+    mov  m, a
+    inx  h
+    dcr  c
+    jnz  memset8
+    ret
+
+;----------------------------------------------------------------------------------------------------------------------
+
+delay8000:
+    lxi  d, 08000h
+delay:
+    dcx  d
+    mov  a, d
+    ora  e
+    jnz  delay
+    ret
 
 ;----------------------------------------------------------------------------------------------------------------------
 
@@ -29,7 +117,6 @@ entry:
 .include "bios.inc"
 .include "div16.inc"
 .include "graph.inc"
-.include "intro.inc"
 .include "playfieldgraph.inc"
 .include "rand.inc"
 .include "unmlz.inc"
@@ -67,6 +154,8 @@ level6:
 .include "graph/level6.inc"
 ;level7:
 ;.include "graph/level7.inc"
+
+; Надо выиграть 1235 байт
 
 ;----------------------------------------------------------------------------------------------------------------------
 

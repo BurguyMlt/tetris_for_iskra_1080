@@ -7,7 +7,7 @@ intro:
     ; Не инверсный текст
     call normalText_F793
 
-    ; Черный фон. Красный текст. Гасим вторую плоскость видеопамяти.
+    ; Гасим экран
     mvi  a, PALETTE_BLACK
     out  IO_PALETTE_0
     out  IO_PALETTE_1
@@ -88,38 +88,6 @@ paletteEffect:
     mov  a, b
     out  IO_PALETTE_2
     out  IO_PALETTE_3
-    ret
-
-;----------------------------------------------------------------------------------------------------------------------
-
-drawText_1:
-    call drawChar1_F7FB
-drawText:
-    mov  a, m
-    inx  h
-    ora  a
-    rz
-    cpi  32
-    jnc  drawText_1
-    call setCursorY_F7DC
-    mov  a, m
-    inx  h
-    call setCursorX_F7BE
-    jmp  drawText
-
-;----------------------------------------------------------------------------------------------------------------------
-
-pressAnyKey:
-    ; Ждем пока пользователь отпустит клавишу
-pressAnyKey_1:
-    call inkey_FC12
-    cpi  0FFh
-    jnz  pressAnyKey_1
-pressAnyKey_2:
-    call rand
-    call inkey_FC12
-    cpi  0FFh
-    jz   pressAnyKey_2
     ret
 
 ;----------------------------------------------------------------------------------------------------------------------
