@@ -1,0 +1,2 @@
+sudo apt-get install winetricks
+winetricks mfc42
