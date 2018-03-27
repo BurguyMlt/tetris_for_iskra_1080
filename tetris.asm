@@ -124,6 +124,53 @@ delay:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
+drawChar1:
+    ; Адрес символа
+    add  a ; *2
+    add  a ; *4
+    mov  d, a
+    add  a ; *8
+    add  d ; *12
+    mov  e, a
+    mvi  d, 0
+    lxi  h, font
+    dad  d
+
+drawChar1_addr = $+1
+    lxi  b, 0D000h
+    push b
+    push h
+    call drawChar2
+    pop  h
+    pop  b
+    push b
+    mov  a, b
+    sbi  40h
+    mov  b, a
+    call drawChar2
+    pop  b
+
+    ; Налево
+    inr  b
+    mov  h, b
+    mov  l, c
+    shld drawChar1_addr
+    ret
+
+drawChar2:
+    mvi  d, 12
+drawChar2_1:
+    ldax b
+    ana  m
+    stax b
+    inx  h
+    inr  c
+    dcr  d
+    jnz  drawChar2_1
+    ret
+
+;----------------------------------------------------------------------------------------------------------------------
+
 .include "tetris.inc"
 .include "bios.inc"
 .include "div16.inc"
@@ -166,6 +213,8 @@ level6:
 .include "graph/level6.inc"
 ;level7:
 ;.include "graph/level7.inc"
+font:
+.include "graph/font.inc"
 
 ; Надо выиграть 1235 байт
 

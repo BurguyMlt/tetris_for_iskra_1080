@@ -3,6 +3,7 @@ SYS_BACKUP_SIZE = 80h
 SYS_BACKUP_TO   = 3h
 
 NEW_BACKUP_FROM = 0C000h
+SCO_BACKUP_FROM = 0C000h + (7 * 48 * 2)
 
 OPCODE_XCHG = 0EBh
 OPCODE_NOP = 000h
@@ -96,6 +97,7 @@ drawBackgrond:
     sta clearNewFigure_2
     sta clearNewFigure_3
     call clearNewFigure
+    call clearScore
     mvi a, OPCODE_NOP
     sta clearNewFigure_2
     sta clearNewFigure_3
@@ -137,6 +139,11 @@ palette = $+1
 ; Перерисовать текущий счет
 
 redrawScore:
+    call clearScore
+
+    lxi h, 0FFFFh-24-(45*256)
+    shld drawChar1_addr
+
     lhld palette
     mov  a, m
     ora  a
@@ -166,9 +173,9 @@ redrawScore_1:
     call div16
     ; Остаток от деления вывести на экран
     push h
-    mov  a, e
-    adi  '0'
-    call drawChar1_F7FB
+    mov  a, e    
+    call drawChar1
+;    call drawChar1_F7FB
     pop  d
     pop  b
     ; Положение следующего символа
@@ -180,27 +187,46 @@ redrawScore_1:
     ret
 
 ;-------------------------------------------------------------------------------
+
+clearScore:
+    lxi  b, 5 * 256 + 12
+    lxi  h, SCO_BACKUP_FROM
+    lxi  d, 0FFFFh-24-(45*256)
+    jmp  copyImage
+
+;-------------------------------------------------------------------------------
 ; Залить место экрана где выводится новая фигура
 
 clearNewFigure:
+    lxi  b, 7 * 256 + 48
     lxi  h, NEW_BACKUP_FROM
-    lxi  d, 0B8F8h-48
+    lxi  d, 0F8F8h - 48
+copyImage:
+    push d
     call clearNewFigure_0
-    lxi  d, 0F8F8h-48
+    pop  d
+    mov  a, d
+    sui  40h
+    mov  d, a
+
 clearNewFigure_0:
-    mvi  b, 7
+    push b
+    ;mvi  b, 7
 clearNewFigure_1:
     push d
-    mvi  c, 48
+    push b
+    ;mvi  c, 48
 clearNewFigure_2:
     nop
     call memcpy8
 clearNewFigure_3:
     nop
+    pop  b
     pop  d
     inr  d
     dcr  b
     jnz  clearNewFigure_1
+    pop  b
     ret
 
 ;-------------------------------------------------------------------------------
