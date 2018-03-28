@@ -124,49 +124,90 @@ delay:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-drawChar1:
-    ; Адрес символа
+FONT_HEIGHT = 12
+
+drawChar:
+    ; Адрес символа в знакогенераторе
+    ; de = font + a * 12
     add  a ; *2
     add  a ; *4
     mov  d, a
     add  a ; *8
     add  d ; *12
-    mov  e, a
-    mvi  d, 0
-    lxi  h, font
+    mov  l, a
+    mvi  h, 0
+    lxi  d, font
     dad  d
+    xchg
 
-drawChar1_addr = $+1
-    lxi  b, 0D000h
-    push b
-    push h
-    call drawChar2
-    pop  h
-    pop  b
-    push b
-    mov  a, b
-    sbi  40h
-    mov  b, a
-    call drawChar2
-    pop  b
+    ; Адрес в видеопамяти
+drawCharAddr = $+1
+    lxi  h, 0D000h
 
-    ; Налево
-    inr  b
-    mov  h, b
-    mov  l, c
-    shld drawChar1_addr
+    ; Цикл
+    mvi  c, FONT_HEIGHT
+drawChar_1:
+    push b
+
+    ; Первая плоскость
+    mov  b, m
+    ldax d
+drawChar_cma1:
+    nop    ; cma
+    ana  b ; ora b
+    mov  m, a
+
+    ; Следуюая плоскость
+    ; hl -= 4000h
+    lxi  b, 10000h - 4000h
+    dad  b
+
+    ; Вторая плоскость
+    mov  b, m
+    ldax d
+drawChar_cma2:
+    nop    ; cma
+    ana  b ; ora b
+    mov  m, a
+
+    ; Предыдущая плоскость, следующий пиксель
+    ; hl += 4000h + 1
+    lxi  b, 4001h
+    dad  b
+
+    ; Следующий байт шрифта
+    inx  d
+
+    ; Цикл
+    pop  b
+    dcr  c
+    jnz  drawChar_1
+
+    ; Перемещаем курсор на следующий символ
+    lxi h, drawCharAddr
+    inr m
     ret
 
-drawChar2:
-    mvi  d, 12
-drawChar2_1:
-    ldax b
-    ana  m
-    stax b
-    inx  h
-    inr  c
-    dcr  d
-    jnz  drawChar2_1
+;----------------------------------------------------------------------------------------------------------------------
+
+OPCODE_NOP   = 0
+OPCODE_CMA   = 2Fh
+OPCODE_ANA_B = 0A0h
+OPCODE_ORA_B = 0B0h
+
+setTextColor:
+    lxi  h, OPCODE_NOP + (OPCODE_ANA_B * 256)
+    lxi  d, OPCODE_CMA + (OPCODE_ORA_B * 256)
+    rrc  a
+    jc   setTextColor_1
+    xchg
+setTextColor_1:
+    shld drawChar_cma1
+    rrc  a
+    jc   setTextColor_2
+    xchg
+setTextColor_2:
+    shld drawChar_cma2
     ret
 
 ;----------------------------------------------------------------------------------------------------------------------

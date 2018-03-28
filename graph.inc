@@ -142,44 +142,21 @@ redrawScore:
     call clearScore
 
     lxi h, 0FFFFh-24-(45*256)
-    shld drawChar1_addr
-
-    lhld palette
-    mov  a, m
-    ora  a
-    cnz  negativeText_F798
-    cz   normalText_F793
-
-    ; Переместить курсор в строку
-    mvi  a, 1
-    call setCursorY_F7DC
-
-    ; Столбец для вывода первого символа
-    mvi  b, 61
+    shld drawCharAddr
 
     ; Очки в DE
     lhld score
     xchg
 
 redrawScore_1:
-    push b
-    ; Переместить крурсор в нужный столбец
-    push h
-    mov  a, b
-    call setCursorX_F7BE
-    pop  h
     ; Разделить ВУ на 10
     lxi  h, 10
     call div16
     ; Остаток от деления вывести на экран
     push h
-    mov  a, e    
-    call drawChar1
-;    call drawChar1_F7FB
+    mov  a, e
+    call drawChar
     pop  d
-    pop  b
-    ; Положение следующего символа
-    dcr b
     ; Если DE=0 выходим
     mov  a, d
     ora  e
