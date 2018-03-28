@@ -18,7 +18,7 @@ figureC        db 0
 nextO          db 0 ;  O+С должны быть подряд
 nextC          db 0
 score          dw 0
-bestScore      db 0
+bestScore      dw 0
 level          db 0
 gameOverFlag   db 0
 
@@ -414,15 +414,15 @@ checkLine_1:
 
 ;-------------------------------------------------------------------------------
 
-setLevel:
+;setLevel:
     ; level = l;
-    sta level
+;    sta level;
 
-    ; initTimer();
+    ; initTimer();;
     ; call initTimer
-
+;
     ; redrawAll();
-    jmp redrawAll
+;    jmp redrawAll
 
 ;-------------------------------------------------------------------------------
 
@@ -447,10 +447,13 @@ checkLines_1:
     lhld score
     inx  h
     shld score
-    ;
+    ; if(bestScore < score) bestScore = score
     xchg
     lhld bestScore
-    call cmpHlDe
+    mov  a, l
+    sub  e
+    mov  a, h
+    sbc  d
     jnc checkLines_4
     xchg
     shld bestScore
@@ -477,24 +480,31 @@ checkLines_3:
     ret
     ;     redrawScore();
     call redrawScore
-    ; var l = Math.floor(score/10);
-    ; if(level < 8 && level < l) setLevel(l);
+    ; hl = score/30;
     lhld score
     xchg
     lxi  h, 30
     call div16
-    xra a
-    ora h
-    rnz
-    mov a, l
-    cpi LEVELS_COUNT
-    rnc
-    lda level
-    cmp l
+    mov  a, l
+setLevel1:
+    ; if(a <= level) return;
+    lhld level
+    cmp  l
     rz
-    mov a, l
-    sta level
-    jmp redrawAll
+    rc
+    ; if(a >= LEVELS_COUNT) return
+    cpi  LEVELS_COUNT
+    rnc
+    sta  level
+    jmp  redrawAll
+
+;-------------------------------------------------------------------------------
+
+nextLevel:
+    lda  level
+    inr  a
+    call setLevel1
+    jmp  gameLoop
 
 ;-------------------------------------------------------------------------------
 
@@ -581,7 +591,9 @@ gameLoop_185:
     call move
     jmp  gameLoop
 gameLoop_16:
-
+    cpi  '1'
+    jz   nextLevel
+    
     ; Клавиша "Вниз"
     cpi  130
     jz   down

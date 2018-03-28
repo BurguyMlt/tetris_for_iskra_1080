@@ -65,15 +65,6 @@ drawText:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-cmpHlDe:
-    mov  a, l
-    sub  e
-    mov  a, h
-    sbc  d
-    ret
-
-;----------------------------------------------------------------------------------------------------------------------
-
 pressAnyKey:
     ; Ждем пока пользователь отпустит клавишу
 pressAnyKey_1:
@@ -208,13 +199,14 @@ OPCODE_ORA_B = 0B0h
 setTextColor:
     lxi  h, OPCODE_NOP + (OPCODE_ANA_B * 256)
     lxi  d, OPCODE_CMA + (OPCODE_ORA_B * 256)
-    rrc  a
-    jc   setTextColor_1
+    rrc
+    jnc  setTextColor_1
     xchg
+    cma
 setTextColor_1:
     shld drawChar_cma1
-    rrc  a
-    jc   setTextColor_2
+    rrc
+    jnc  setTextColor_2
     xchg
 setTextColor_2:
     shld drawChar_cma2

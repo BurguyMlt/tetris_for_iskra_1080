@@ -70,11 +70,15 @@ drawBackgrond:
     mov  e, m
     inx  h
     mov  d, m
-    inx  h    
+    inx  h
     mov  a, m
     sta  redrawNewFigure1_1
     inx  h
     shld palette
+
+    push d
+    call setTextColor
+    pop  d
 
     ; Распаковываем
     lxi  b, VIDEO_PAGE_1
@@ -147,7 +151,7 @@ redrawScore:
     call drawNumber
 
     lxi  h, 0FFFFh-40-(45*256)
-    shld drawCharAddr   
+    shld drawCharAddr
     lhld bestScore
     jmp  drawNumber
 
