@@ -167,7 +167,9 @@ redrawScore_1:
     ; Остаток от деления вывести на экран
     push h
     mov  a, e
+    adi  '0'
     call drawChar
+    inr  m
     pop  d
     ; Если DE=0 выходим
     mov  a, d

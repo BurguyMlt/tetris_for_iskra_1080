@@ -4,6 +4,9 @@ LOGO_SIZE   = (LOGO_WIDTH / 8 * LOGO_HEIGHT)
 LOGO_DEST   = (VIDEO_PAGE_0 + ((VIDEO_WIDTH - LOGO_WIDTH) / 2 / 8 * 256) - ((VIDEO_HEIGHT - LOGO_HEIGHT) / 2))
 
 intro:
+    mvi  a, 3
+    call setTextColor
+
     ; Не инверсный текст
     call normalText_F793
 
@@ -93,24 +96,24 @@ paletteEffect:
 ;----------------------------------------------------------------------------------------------------------------------
 
 introText:
-    db  4,19,"SPECTRUM HOLOBYTE PRESENTS"
-    db  6,26,"T E T R I S"
-    db  8,15,"VERSION"
-    db  8,33,"PROGRAMMER"
-    db 10,15,"ISKRA 1080 TARTU"
-    db 10,33,"ALEKSEI MOROZOV"
-    db 12,15,"IBM CGA"
-    db 12,33,"ENG AN JIO"
-    db 13,15,"RAM RESIDENT"
-    db 13,33,"ERICK JAP"
-    db 14,15,"TANDY"
-    db 14,33,"BILLY SUTYONO"
-    db 15,15,"IBM EGA"
-    db 15,33,"ARYANTO WIDODO"
-    db 17,15,"GRAPHICS"
-    db 17,33,"DAN GUERRA"
-    db 18,15,"PRODUCT MANAGER"
-    db 18,33,"R. ANTON WIDJAJA"
-    db 19,15,"PRODUCER"
-    db 19,33,"SEAN B. BARGER"
+    db  4-2,19-8,"SPECTRUM HOLOBYTE PRESENTS"
+    db  6-2,26-8,"T E T R I S"
+    db  8-2,15-8,"VERSION"
+    db  8-2,33-8,"PROGRAMMER"
+    db 10-2,15-8,"ISKRA 1080 TARTU"
+    db 10-2,33-8,"ALEKSEI MOROZOV"
+    db 12-2,15-8,"IBM CGA"
+    db 12-2,33-8,"ENG AN JIO"
+    db 13-2,15-8,"RAM RESIDENT"
+    db 13-2,33-8,"ERICK JAP"
+    db 14-2,15-8,"TANDY"
+    db 14-2,33-8,"BILLY SUTYONO"
+    db 15-2,15-8,"IBM EGA"
+    db 15-2,33-8,"ARYANTO WIDODO"
+    db 17-2,15-8,"GRAPHICS"
+    db 17-2,33-8,"DAN GUERRA"
+    db 18-2,15-8,"PRODUCT MANAGER"
+    db 18-2,33-8,"R. ANTON WIDJAJA"
+    db 19-2,15-8,"PRODUCER"
+    db 19-2,33-8,"SEAN B. BARGER"
     db 0

@@ -28,8 +28,8 @@ entry:
 restartGame:
     call tetris
 
-    ; Выводим надпись "GAME OVER"  ;!!!! Заменить на более красивую надпись
-    call normalText_F793
+    ; Выводим надпись "GAME OVER"
+    call setTextColorNt
     lxi  h, gameOverText
     call drawText
 
@@ -44,12 +44,15 @@ entry_1:
     jmp  restartGame
 
 gameOverText:
-    db  12,27,"GAME OVER",0
+    db 9,19," GAME OVER ",0
 
 ;----------------------------------------------------------------------------------------------------------------------
 
 drawText_1:
-    call drawChar1_F7FB
+    push h
+    call drawChar
+    dcr  m
+    pop  h
 drawText:
     mov  a, m
     inx  h
@@ -57,12 +60,19 @@ drawText:
     rz
     cpi  32
     jnc  drawText_1
-    call setCursorY_F7DC
-    mov  a, m
+    mov  e, a
+    add  a ; *2
+    add  e ; *3
+    add  a ; *6
+    add  e ; *7
+    add  a ; *14
+    cma
+    sta  drawCharAddr
+    mvi  a, 0FFh
+    sub  m
     inx  h
-    call setCursorX_F7BE
+    sta  drawCharAddr+1
     jmp  drawText
-
 ;----------------------------------------------------------------------------------------------------------------------
 
 pressAnyKey:
@@ -129,14 +139,15 @@ FONT_HEIGHT = 12
 drawChar:
     ; Адрес символа в знакогенераторе
     ; de = font + a * 12
-    add  a ; *2
-    add  a ; *4
-    mov  d, a
-    add  a ; *8
-    add  d ; *12
     mov  l, a
     mvi  h, 0
-    lxi  d, font
+    dad  h ; *2
+    dad  h ; *4
+    mov  d, h
+    mov  e, l
+    dad  h ; *8
+    dad  d ; *12
+    lxi  d, font - (' ' * 12)
     dad  d
     xchg
 
@@ -153,7 +164,7 @@ drawChar_1:
     mov  b, m
     ldax d
 drawChar_cma1:
-    nop    ; cma
+    cma    ; nop
     ana  b ; ora b
     mov  c, a
 
@@ -167,7 +178,7 @@ drawChar_cma1:
     mov  b, m
     ldax d
 drawChar_cma2:
-    nop    ; cma
+    cma    ; nop
     ana  b ; ora b
 
     ; Записываем в память значения почти одновременно
@@ -186,7 +197,6 @@ drawChar_cma2:
 
     ; Перемещаем курсор на следующий символ
     lxi h, drawCharAddr+1
-    inr m
     ret
 
 ;----------------------------------------------------------------------------------------------------------------------
@@ -196,9 +206,18 @@ OPCODE_CMA   = 2Fh
 OPCODE_ANA_B = 0A0h
 OPCODE_ORA_B = 0B0h
 
+setTextColorNt:
+    lxi  h, OPCODE_NOP + (OPCODE_NOP * 256)
+    lxi  d, OPCODE_NOP + (OPCODE_NOP * 256)
+    jmp  setTextColor1
+
+;----------------------------------------------------------------------------------------------------------------------
+
+
 setTextColor:
-    lxi  h, OPCODE_NOP + (OPCODE_ANA_B * 256)
-    lxi  d, OPCODE_CMA + (OPCODE_ORA_B * 256)
+    lxi  h, OPCODE_CMA + (OPCODE_ANA_B * 256)
+    lxi  d, OPCODE_NOP + (OPCODE_ORA_B * 256)
+setTextColor1:
     rrc
     jnc  setTextColor_1
     xchg
