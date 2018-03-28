@@ -18,6 +18,7 @@ figureC        db 0
 nextO          db 0 ;  O+С должны быть подряд
 nextC          db 0
 score          dw 0
+bestScore      db 0
 level          db 0
 gameOverFlag   db 0
 
@@ -446,6 +447,14 @@ checkLines_1:
     lhld score
     inx  h
     shld score
+    ;
+    xchg
+    lhld bestScore
+    call cmpHlDe
+    jnc checkLines_4
+    xchg
+    shld bestScore
+checkLines_4:
     ; f = true;
     xra  a
     sta  checkLines_3

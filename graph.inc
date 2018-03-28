@@ -141,13 +141,21 @@ palette = $+1
 redrawScore:
     call clearScore
 
-    lxi h, 0FFFFh-24-(45*256)
+    lxi  h, 0FFFFh-24-(45*256)
     shld drawCharAddr
-
-    ; Очки в DE
     lhld score
-    xchg
+    call drawNumber
 
+    lxi  h, 0FFFFh-40-(45*256)
+    shld drawCharAddr   
+    lhld bestScore
+    jmp  drawNumber
+
+;-------------------------------------------------------------------------------
+; Вывести число
+
+drawNumber:
+    xchg
 redrawScore_1:
     ; Разделить ВУ на 10
     lxi  h, 10
@@ -166,9 +174,9 @@ redrawScore_1:
 ;-------------------------------------------------------------------------------
 
 clearScore:
-    lxi  b, 5 * 256 + 12
+    lxi  b, 5 * 256 + 40
     lxi  h, SCO_BACKUP_FROM
-    lxi  d, 0FFFFh-24-(45*256)
+    lxi  d, 0FFFFh-40-(45*256)
     jmp  copyImage
 
 ;-------------------------------------------------------------------------------
