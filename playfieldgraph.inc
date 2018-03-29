@@ -4,6 +4,9 @@ PLAYFIELD_Y = 8
 
 ;-------------------------------------------------------------------------------
 ; Рисование клетки
+; d - x
+; e - y
+; a - color
 
 cellOff:
     db 240- 0,03Fh,0FFh,000h ; 00111111,11111111,00000000
@@ -22,198 +25,105 @@ cellOff:
     db 254- 3,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
     db 254- 5,03Fh,0FFh,000h ; 00111111,11111111,00000000
 
+OPCODE_ORI = 0F6h
+OPCODE_ANI = 0E6h
+
 drawCell:
-    ; addr = cellOff[d]
-    mov b, e
-    lxi h, cellOff
-    mov e, d
-    mvi d, 0
-    dad d
-    dad d
-    dad d
-    dad d
-    mov d, m
-    mov e, b
+    ; Задаем цвет первой плоскости
+    rrc
+    lxi  h, OPCODE_ORI + (OPCODE_NOP * 256)
+    lxi  d, OPCODE_ANI + (OPCODE_CMA * 256)
+    jc  drawCell_1
+    xchg
+    cma
+drawCell_1:
+    push psw
+    mov  a, h
+    sta  drawColumn_cma1
+    shld drawColumn_op1
+    pop psw
+
+    ; Задаем цвет второй плоскости
+    rrc
+    jc  drawCell_2
+    xchg
+drawCell_2:
+    mov  a, h
+    sta  drawColumn_cma2
+    shld drawColumn_op2
+
+    ; Адрес в видеопамяти
+    ; de = cellOff[b] * 256 + c
+    ; hl = адрес битовых масок
+    lxi  h, cellOff
+    mov  e, b
+    mvi  d, 0
+    dad  d
+    dad  d
+    dad  d
+    dad  d
+    mov  d, m
+    mov  e, c
+
+    ; Цикл для трёх колонок
+    mvi  b, 3
+drawColumn_6:
+
+    ; Следующий байт битовой маски
     inx  h
 
-    mov  c, a
-
-    call clearCell3
-
-    mov  a, c
-    rrc
-    mov  c, a
-
-    mov  a, d
-    sui  40h
-    mov  d, a
-
-    call clearCell3
-
-    ret
-
-;-------------------------------------------------------------------------------
-
-clearCell3:
     push h
     push d
 
-    mov  b, m
-    call clearCell
-
-    inx  h
-    mov  b, m
-    call clearCell
-
-    inx  h
-    mov  b, m
-    call clearCell
-
-    pop d
-    pop h
-    ret
-
-;-------------------------------------------------------------------------------
-
-clearCell:
-    push d
-
-    mov  a, c
-    rrc
-    jc   setCell
-
-    mov  a, b
+    ; Вычисляем маску для первой плоскости
+    mov  a, m
+drawColumn_cma1:
     cma
-    mov  b, a
+    sta drawColumn_op1 + 1
 
-    ldax d
-    ana  b
-    stax d
-    dcx  d
+    ; Вычисляем маску для второй плоскости
+    mov  a, m
+drawColumn_cma2:
+    cma
+    sta drawColumn_op2 + 1
 
-    ldax d
-    ana  b
-    stax d
-    dcx  d
+    ; Вычисляем адрес второй плоскости в HL
+    mov  a, d
+    sui  40h
+    mov  h, a
+    mov  l, e
 
-    ldax d
-    ana  b
-    stax d
-    dcx  d
+    ; Цикл для 12 строк
+    mvi  c, 12
+drawColumn_2:
 
+    ; Первая плоскость
     ldax d
-    ana  b
+drawColumn_op1 = $
+    ani  55h
     stax d
-    dcx  d
+    dcr  e
 
-    ldax d
-    ana  b
-    stax d
-    dcx  d
+    ; Вторая плоскость
+    mov  a, m
+drawColumn_op2 = $
+    ani  55h
+    mov  m, a
+    dcr  l
 
-    ldax d
-    ana  b
-    stax d
-    dcx  d
-
-    ldax d
-    ana  b
-    stax d
-    dcx  d
-
-    ldax d
-    ana  b
-    stax d
-    dcx  d
-
-    ldax d
-    ana  b
-    stax d
-    dcx  d
-
-    ldax d
-    ana  b
-    stax d
-    dcx  d
-
-    ldax d
-    ana  b
-    stax d
-    dcx  d
-
-    ldax d
-    ana  b
-    stax d
+    ; Конец цикла
+    dcr  c
+    jnz  drawColumn_2
 
     pop  d
+    pop  h
+
+    ; Следующая запись на 8 пикселе правее
     dcr  d
 
-    ret
-
-;-------------------------------------------------------------------------------
-
-setCell:
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-    dcx  d
-
-    ldax d
-    ora  b
-    stax d
-
-    pop  d
-    dcr  d
+    ; Конец цикла
+    dcr  b
+    jnz  drawColumn_6
 
     ret
 
@@ -222,25 +132,43 @@ setCell:
 
 redrawMap:
     ;var a = START;
-    lxi b, map + START
+    lxi d, map + START ;b
     lxi h, map2
 
     ;for(var y=0; y<HEIGHT; y++, a++) {
-    mvi e, 0FFh - PLAYFIELD_Y
+    mvi c, 0FFh - PLAYFIELD_Y ;e
 redrawMap_1:
 
     ; for(var x=0; x<WIDTH; x++, a++) {
-    mvi d, 0
+    mvi b, 0 ; d
 redrawMap_2:
 
     ; var c = map[a]
     ; ctx.fillStyle = colors[c];
     ; ctx.fillRect(122+x*14, 8+y*12, 14, 12);
-    ldax b
+    ldax d ; b
     cmp  m
-    jz   redrawMap_3
-    mov  m, a
+    cnz  redrawMap_4
 
+    inr  b ; d
+    inx  d ; b
+    inx  h
+    mov  a, b ; d
+    cpi  WIDTH
+    jnz  redrawMap_2
+
+    inx  d ; b
+    mov  a, c ; e
+    sui  12
+    mov  c, a ; e
+    cpi  0FFh - PLAYFIELD_Y - (HEIGHT * 12)
+    jnz  redrawMap_1
+    ret
+
+;-------------------------------------------------------------------------------
+
+redrawMap_4:
+    mov  m, a
     push b
     push d
     push h
@@ -248,21 +176,6 @@ redrawMap_2:
     pop  h
     pop  d
     pop  b
-
-redrawMap_3:
-    inr  d
-    inx  b
-    inx  h
-    mov  a, d
-    cpi  WIDTH
-    jnz  redrawMap_2
-
-    inx  b
-    mov  a, e
-    sui  12
-    mov  e, a
-    cpi  0FFh - PLAYFIELD_Y - (HEIGHT * 12)
-    jnz  redrawMap_1
     ret
 
 ;-------------------------------------------------------------------------------

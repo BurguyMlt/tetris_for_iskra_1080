@@ -238,12 +238,12 @@ redrawNewFigure1:
     mov  e, a
     mvi  a, 0F7h
     sub  e
-    mov  e, a
+    mov  c, a
 
     ; Расчет координаты X
     mov  a, d
     adi  10
-    mov  d, a
+    mov  b, a
 
     ; Рисование клетки черным цветом
 redrawNewFigure1_1 = $+1
