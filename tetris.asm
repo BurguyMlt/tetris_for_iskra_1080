@@ -13,10 +13,6 @@ entry:
     ; Инициализируем стек
     lxi sp, 100h
 
-    ; Режим экрана 64 символа в ширину
-    mvi  a, 40h
-    sta  videoMode_C802
-
     ; Вступление
     call intro
 
@@ -48,16 +44,16 @@ gameOverText:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-drawText_1:
-    push h
-    call drawChar
-    dcr  m
-    pop  h
 drawText:
+    call drawText2
+    jnz  drawText
+    ret
+
+drawText2:
     mov  a, m
-    inx  h
     ora  a
     rz
+    inx  h
     cpi  32
     jnc  drawText_1
     mov  e, a
@@ -72,7 +68,17 @@ drawText:
     sub  m
     inx  h
     sta  drawCharAddr+1
-    jmp  drawText
+    mov  a, m
+    inx  h
+drawText_1:
+    push h
+    call drawChar
+    dcr  m
+    pop  h
+    xra  a ; return nz
+    inr  a
+    ret
+
 ;----------------------------------------------------------------------------------------------------------------------
 
 pressAnyKey:
@@ -246,20 +252,17 @@ setTextColor_2:
 LEVELS_COUNT = 6
 
 levels dw level1
-       db 0,1,15,3,4,0
+       db 0,3,4
        dw level2
-       db 0,1,15,2,4,0
+       db 0,2,4
        dw level3
-       db 0,1,15,3,5,0
+       db 0,3,5
        dw level4
-       db 0,1,15,3,4,0
+       db 0,3,4
        dw level5
-       db 0,1,15,3,4,0
+       db 0,3,4
        dw level6
-       db 3,0,15,3,4,0
-
-;       dw level7
-;       db 15,3,4,0,0,0
+       db 3,3,4
 
 level1:
 .include "graph/level1.inc"
@@ -273,12 +276,8 @@ level5:
 .include "graph/level5.inc"
 level6:
 .include "graph/level6.inc"
-;level7:
-;.include "graph/level7.inc"
 font:
 .include "graph/font.inc"
-
-; Надо выиграть 1235 байт
 
 ;----------------------------------------------------------------------------------------------------------------------
 

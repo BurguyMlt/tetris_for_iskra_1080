@@ -593,7 +593,7 @@ gameLoop_185:
 gameLoop_16:
     cpi  '1'
     jz   nextLevel
-    
+
     ; Клавиша "Вниз"
     cpi  130
     jz   down

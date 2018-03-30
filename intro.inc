@@ -1,14 +1,11 @@
 LOGO_WIDTH  = 320
 LOGO_HEIGHT = 166
 LOGO_SIZE   = (LOGO_WIDTH / 8 * LOGO_HEIGHT)
-LOGO_DEST   = (VIDEO_PAGE_0 + ((VIDEO_WIDTH - LOGO_WIDTH) / 2 / 8 * 256) - ((VIDEO_HEIGHT - LOGO_HEIGHT) / 2))
+LOGO_DEST   = (VIDEO_PAGE_0 + ((VIDEO_WIDTH - LOGO_WIDTH) / 2 / 8 * 256) - 16)
 
 intro:
     mvi  a, 3
     call setTextColor
-
-    ; Не инверсный текст
-    call normalText_F793
 
     ; Гасим экран
     mvi  a, PALETTE_BLACK
@@ -73,11 +70,59 @@ intro_3:
     mvi  b, PALETTE_RED
     call paletteEffect
 
-    ; Ждем нажатия на любую клавиашу
-    call pressAnyKey
+    ; Вывод текста
+    call setTextColorNt
+    lxi  h, introText2
+intro_4:
+    call inkey_FC12
+    cpi  0FFh
+    jnz  paletteOff
+    lxi  d, 2000h
+    call delay
+    mov  a, m
+    cpi  '!'
+    jz   intro_5
+    call drawText2
+    jmp  intro_4
 
-    ; Гасим экран
-    ; jmp paletteOff
+;----------------------------------------------------------------------------------------------------------------------
+; Прокрутка
+
+intro_5:
+    push h
+    mvi  b, 14
+intro_6:
+    push b
+    lxi  d, 0FFFFh - (15*14) - (6*256) - 3
+    push d
+    pop  h
+    mvi  b, 36
+scroll_0:
+    push d
+    push h
+    mvi  c, 26
+scroll_1:
+    dcx  h
+    mov  a, m
+    stax d
+    dcx  d
+    dcr  c
+    jnz  scroll_1
+    pop  h
+    pop  d
+    dcr  h
+    dcr  d
+    dcr  b
+    jnz  scroll_0
+    pop  b
+    dcr  b
+    jnz  intro_6
+
+    lxi  h, 0FFFFh - (17*14) - (6*256)
+    shld drawCharAddr
+    pop  h
+    inx  h
+    jmp  intro_4
 
 ;----------------------------------------------------------------------------------------------------------------------
 
@@ -92,6 +137,24 @@ paletteEffect:
     out  IO_PALETTE_2
     out  IO_PALETTE_3
     ret
+
+;----------------------------------------------------------------------------------------------------------------------
+
+introText2:
+    db 33,"TETRIS WAS INVENTED BY A 30-YEAR-OLD"
+    db 33,"SOVIET RESEARCHER NAMED ALEXEY"
+    db 33,"PAZHITNOV WHO CURRENTLY WORKS AT"
+    db 33,"THE COMPUTER CENTRE(ACADEMY SOFT) OF"
+    db 33,"THE USSR ACADEMY OF SCIENCES IN"
+    db 33,"MOSCOW. THE ORIGINAL PROGRAMMER WAS"
+    db 33,"18-YO VADIM GERASIMOV. A STUDENT"
+    db 33,"STUDYING COMPUTER INFORMATICS AT"
+    db 33,"MOSCOW UNIVERSITY. NOW YOU CAN ENJOY"
+    db 33,"TETRIS BECAUSE OF THE JOINT EFFORTS"
+    db 33,"OF ACADEMY SOFT, MOSCOW, ANDROMEDA"
+    db 33,"SOFTWARE LTD, LONDON, ALEMORF, SPB"
+    db 33,"AND SPECTRUM HOLOBYTE, USA."
+    db 0
 
 ;----------------------------------------------------------------------------------------------------------------------
 

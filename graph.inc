@@ -60,21 +60,23 @@ drawBackgrond:
     out  IO_PALETTE_3
 
     ; Получаем указатель на изображение уровня
-    lhld level
-    mvi  h, 0
-    dad  h
-    dad  h
-    dad  h
-    lxi  d, levels
+    lda  level
+    mov  d, a
+    add  a ;*2
+    add  a ;*4
+    add  d ;*5
+    mvi  d, 0
+    mov  e, a
+    lxi  h, levels
     dad  d
     mov  e, m
     inx  h
     mov  d, m
     inx  h
-    mov  a, m
+    mov  a, m ; Цвет фигуры и текста
     sta  redrawNewFigure1_1
     inx  h
-    shld palette
+    shld palette ; Палитра
 
     push d
     call setTextColor
@@ -121,11 +123,11 @@ palette = $+1
     xra  a
     ora  l
     rz
-    inx  h
-    mov  a, m
+    ;inx  h
+    mvi  a, 15
     ora  b
     out  IO_PALETTE_0
-    inx  h
+    ;inx  h
     mov  a, m
     ora  b
     out  IO_PALETTE_1
@@ -133,9 +135,8 @@ palette = $+1
     mov  a, m
     ora  b
     out  IO_PALETTE_2
-    inx  h
-    mov  a, m
-    ora  b
+    ;inx  h
+    mov  a, b
     out  IO_PALETTE_3
     ret
 
