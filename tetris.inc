@@ -35,20 +35,6 @@ redrawAll:
     ret
 
 ;-------------------------------------------------------------------------------
-; Прерисовать новую фигуру
-
-redrawNewFigure:
-    ; Залить цветом 1 место где выводится новая фигура
-    call clearNewFigure
-
-    ; Нарисовать новую фигуру
-    ; decodeFigure(nextO, redrawNewFigure1);
-    lda  nextO
-    lxi  h, redrawNewFigure1
-    call decodeFigureEx
-    ret
-
-;-------------------------------------------------------------------------------
 
 checkFigure:
     ; return map[a];

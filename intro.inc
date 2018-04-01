@@ -3,9 +3,37 @@ LOGO_HEIGHT = 166
 LOGO_SIZE   = (LOGO_WIDTH / 8 * LOGO_HEIGHT)
 LOGO_DEST   = (VIDEO_PAGE_0 + ((VIDEO_WIDTH - LOGO_WIDTH) / 2 / 8 * 256) - 16)
 
+PLANE_WIDTH      = 19
+PLANE_HEIGHT     = 12
+PLANE_SIZE_1     = (PLANE_WIDTH * PLANE_HEIGHT * 3)
+PLANE_SIZE_2     = ((PLANE_WIDTH + 1) * PLANE_HEIGHT * 3)
+
+PACKED_LOGO_SIZE = 2034
+
+packedLogo2      = 0C000h
+PLANE_BUFFER_2   = 0C880h ; 19*12*2 = 456 байт
+PLANE_BUFFER     = (PLANE_BUFFER_2 + (19*12*2)) ; 48*12*2 = 1152 байт
+
+OPCODE_ANA_M     = 0A6h
+OPCODE_ORA_M     = 0B6h
+
+;----------------------------------------------------------------------------------------------------------------------
+
 intro:
-    mvi  a, 3
-    call setTextColor
+    ; Переносим ресурсы из видеопамяти
+    lxi  h, packedLogo
+    lxi  d, packedLogo2
+    mvi  b, 0
+    call memcpyq
+    xchg
+    lxi  h, packedLogo + 1024
+    call memcpyq
+
+    ; При повторном вызове этой функции данные уже будут уничтожены, так как они находятся в видеопамяти
+    mvi  a, 0DEh
+    sta  packedLogo
+
+    call setTextColorNt
 
     ; Гасим экран
     mvi  a, PALETTE_BLACK
@@ -15,16 +43,14 @@ intro:
     out  IO_PALETTE_3
 
     ; Очистка первой плоскости видеопамяти
-    call clearScreen1
+    call clearScreen
 
     ; Вывод текста
     lxi  h, introText
     call drawText
 
     ; Показываем текст
-    mvi  a, PALETTE_DARK_RED
-    mvi  b, PALETTE_RED
-    call paletteEffect
+    call paletteOn
 
     ; Ждем нажатия на любую клавиашу
     call pressAnyKey
@@ -33,12 +59,13 @@ intro:
 introOff:
     call paletteOff
 
-    ; При повторном вызове этой функции данные уже будут уничтожены, так как они находятся в видеопамяти
-;    mvi a, 0C9h
-;    sta introOff
+    call clearScreen
 
     ; Распаковываем лого
-    lxi  d, packedLogo
+    lxi  d, packedLogo2
+    ldax d
+    cpi  0DEh
+    jz   intro_59
     lxi  b, LOGO_DEST
     call unmlz
 
@@ -64,14 +91,12 @@ intro_3:
     jnz  intro_3
     dcr  b
     jnz  intro_1
+intro_59:
 
     ; Показываем лого
-    mvi  a, PALETTE_DARK_RED
-    mvi  b, PALETTE_RED
-    call paletteEffect
+    call paletteOn
 
     ; Вывод текста
-    call setTextColorNt
     lxi  h, introText2
 intro_4:
     call inkey_FC12
@@ -83,7 +108,185 @@ intro_4:
     cpi  '!'
     jz   intro_5
     call drawText2
-    jmp  intro_4
+    jnz  intro_4
+
+;----------------------------------------------------------------------------------------------------------------------
+; Летащий самолетик
+
+Y_MULTIPLIER = 256
+
+fly:
+    ; Копируем новый блок с экарана в буфер
+    call copyImageFromScreen
+    lxi  h, 0D090h
+    lxi  b, 48 * 256 + PLANE_HEIGHT ; width * 256 + height
+    lxi  d, PLANE_BUFFER ; to
+    call copyImage
+    call copyImageToScreen
+
+fly_0:
+    ; Адрес вывода самолетика - за левым крем экрана
+    lxi  h, 0D090h - (18 * Y_MULTIPLIER)
+    shld fly_a1
+
+    ; Теневой буфер
+    lxi  h, PLANE_BUFFER - (18 * PLANE_HEIGHT * 2)
+    shld fly_a2
+
+    ; Цикл движения от левого края экрана до правого края экрана. Шаг 8 пикселей или 1 байт
+fly_1:
+    ; Вывод первой фазы
+    mvi  b, 4
+fly_2:
+    push b
+
+    ; Сдвиг
+    lxi  h, plane
+    call shiftImage
+    lxi  h, plane
+    call shiftImage
+
+    ; Накладываем на буфер 2 изображение с маской
+    lxi  h, plane
+fly_a2 = $+1
+    lxi  b, PLANE_BUFFER
+    lxi  d, PLANE_BUFFER_2
+    mvi  a, PLANE_WIDTH * PLANE_HEIGHT
+    call copyMaskedImageToBuffer
+
+    ; Выводим изображение 2 на экран
+    lxi  b, PLANE_WIDTH * 256 + PLANE_HEIGHT ; width * 256 + height
+    lxi  d, PLANE_BUFFER_2 ; to
+fly_a1 = $+1
+    lxi  h, 0D090h ; from
+    call copyImageSafe
+
+    pop b
+
+    ; Выход по нажатию клавиши
+    call inkey_FC12
+    cpi  0FFh
+    jnz  paletteOff
+
+    dcr b
+    jnz fly_2
+
+    ; Сброс изображения
+    lxi  h, plane + (PLANE_HEIGHT * 3)
+    lxi  d, plane
+    mvi  b, PLANE_SIZE_1 / 4
+    call memcpyq
+
+    ; Новое место вывода
+    lhld fly_a2
+    lxi  d, PLANE_HEIGHT * 2
+    dad  d
+    shld fly_a2
+
+    ; Новое место вывода
+    lhld fly_a1
+    inr  h
+    shld fly_a1
+
+    ; Если недостигли конца экрана
+    mov  a, h
+    ora  a
+    jnz  fly_1
+
+    ; Если достигли конца экрана
+    jmp  fly_0
+
+;----------------------------------------------------------------------------------------------------------------------
+
+memcpyq:
+    ; Сохранение SP
+    push h
+    lxi  h, 2
+    dad  sp
+    shld memcpyq_2
+    pop  h
+    sphl
+    xchg
+memcpyq_1:
+    pop  d
+    mov  m, e
+    inx  h
+    mov  m, d
+    inx  h
+    pop  d
+    mov  m, e
+    inx  h
+    mov  m, d
+    inx  h
+    dcr  b
+    jnz  memcpyq_1
+memcpyq_2 = $+1
+    lxi  sp, 0
+    ret
+
+;----------------------------------------------------------------------------------------------------------------------
+
+copyMaskedImageToBuffer:
+copyImage91_1:
+    push psw
+    ; Плоскость 1
+    ldax b
+    inx  b
+    ana  m
+    inx  h
+    ora  m
+    dcx  h
+    stax d
+    inx  d
+    ; Плоскость 2
+    ldax b
+    inx  b
+    ana  m
+    inx  h
+    inx  h
+    ora  m
+    inx  h
+    stax d
+    inx  d
+    ; Конец цикла
+    pop  psw
+    dcr  a
+    jnz  copyImage91_1
+    ret
+
+;----------------------------------------------------------------------------------------------------------------------
+; d - на сколько
+
+shiftImage:
+    mvi  e, PLANE_HEIGHT * 3 ; всего строк и плоскостей
+shiftImage_1:
+    push h
+    lxi  b, (PLANE_WIDTH - 1) * PLANE_HEIGHT * 3 ; шаг в 12 пикселей
+    dad  b
+    mov  a, m
+    adc  a
+    pop  h
+
+    lxi  b, PLANE_HEIGHT * 3 ; шаг
+    mvi  d, PLANE_WIDTH ; всего столбцов
+    push h
+intro_34:
+    mov  a, m
+    adc  a
+    mov  m, a
+
+    push psw
+    dad  b
+    pop  psw
+
+    dcr  d
+    jnz  intro_34
+
+    pop  h
+    inx  h
+    dcr  e
+    jnz  shiftImage_1
+    ret
 
 ;----------------------------------------------------------------------------------------------------------------------
 ; Прокрутка
@@ -93,7 +296,7 @@ intro_5:
     mvi  b, 14
 intro_6:
     push b
-    lxi  d, 0FFFFh - (15*14) - (6*256) - 3
+    lxi  d, 0BFFFh - (15*14) - (6*256) - 3
     push d
     pop  h
     mvi  b, 36
@@ -126,17 +329,75 @@ scroll_1:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-paletteOff:
-    mvi  a, PALETTE_DARK_RED
-    mvi  b, PALETTE_BLACK
-paletteEffect:
-    out  IO_PALETTE_2
-    out  IO_PALETTE_3
+paletteOn:
+call paletteLoadDark
     call delay8000
+    mvi  a, PALETTE_CYAN
+    lxi  b, PALETTE_RED * 256 + PALETTE_WHITE
+    jmp paletteLoad
+
+;----------------------------------------------------------------------------------------------------------------------
+
+paletteOff:
+    call paletteLoadDark
+    call delay8000
+    mvi  a, PALETTE_BLACK
+    lxi  b, PALETTE_BLACK * 256 + PALETTE_BLACK
+    jmp paletteLoad
+
+;----------------------------------------------------------------------------------------------------------------------
+
+paletteLoadDark:
+    mvi  a, PALETTE_DARK_CYAN
+    lxi  b, PALETTE_DARK_RED * 256 + PALETTE_DARK_GRAY
+paletteLoad:
+    out  IO_PALETTE_1
     mov  a, b
     out  IO_PALETTE_2
+    mov  a, c
     out  IO_PALETTE_3
     ret
+
+;----------------------------------------------------------------------------------------------------------------------
+
+copyImageSafe:
+    ; Выход за левую границу
+    mov  a, h
+    sui  0D0h
+    jc   copyImageSafe_2
+    ; Выход за правую границу
+    ; a = addr + width;
+    ; if(a < 0D0h) {
+    mov  a, h
+    add  b
+    dcr  a
+    cpi  0D0h
+    jnc  copyImage
+    ; a++; if(a >= width) return; width -= a;
+    inr  a
+    push d
+    mov  d, a
+    mov  a, b
+    sub  d
+    mov  b, a
+    pop  d
+    rz
+    rc
+    jmp  copyImage
+
+;----------------------------------------------------------------------------------------------------------------------
+
+copyImageSafe_2
+    push b
+    xchg
+    mvi  b, 0
+    dad  b
+    dad  b
+    xchg
+    pop  b
+    dcr  b
+    inr  h
+    jmp  copyImageSafe
 
 ;----------------------------------------------------------------------------------------------------------------------
 

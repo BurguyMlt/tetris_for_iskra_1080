@@ -99,14 +99,10 @@ drawBackgrond:
     lxi  b, SYS_BACKUP_SIZE
     call memcpy8back
 
-    mvi a, OPCODE_XCHG
-    sta clearNewFigure_2
-    sta clearNewFigure_3
-    call clearNewFigure
-    call clearScore
-    mvi a, OPCODE_NOP
-    sta clearNewFigure_2
-    sta clearNewFigure_3
+    call copyImageFromScreen
+    call copyNewFigureBackground
+    call copyScoreBackground
+    call copyImageToScreen
 
     ret
 
@@ -144,7 +140,7 @@ palette = $+1
 ; Перерисовать текущий счет
 
 redrawScore:
-    call clearScore
+    call copyScoreBackground
 
     lxi  h, 0FFFFh-24-(45*256)
     shld drawCharAddr
@@ -179,46 +175,95 @@ redrawScore_1:
     ret
 
 ;-------------------------------------------------------------------------------
+; Прерисовать новую фигуру
 
-clearScore:
+redrawNewFigure:
+    ; Залить цветом 1 место где выводится новая фигура
+    call copyNewFigureBackground
+
+    ; Нарисовать новую фигуру
+    ; decodeFigure(nextO, redrawNewFigure1);
+    lda  nextO
+    lxi  h, redrawNewFigure1
+    call decodeFigureEx
+    ret
+
+;-------------------------------------------------------------------------------
+
+copyScoreBackground:
     lxi  b, 5 * 256 + 40
-    lxi  h, SCO_BACKUP_FROM
-    lxi  d, 0FFFFh-40-(45*256)
+    lxi  d, SCO_BACKUP_FROM
+    lxi  h, 0FFFFh-40-(45*256)
     jmp  copyImage
+
+;-------------------------------------------------------------------------------
+
+OPCODE_MOV_A_M = 7Eh
+OPCODE_MOV_M_A = 77h
+OPCODE_STAX_D  = 12h
+OPCODE_LDAX_D  = 1Ah
+
+copyImageFromScreen:
+    ; Модификация функции
+    lxi  h, OPCODE_MOV_A_M + (256 * OPCODE_STAX_D)
+copyImageTo:
+    shld copyImage_o1
+    shld copyImage_o2
+    ret
+
+;-------------------------------------------------------------------------------
+
+copyImageToScreen:
+    lxi  h, OPCODE_LDAX_D + (256 * OPCODE_MOV_M_A)
+    jmp  copyImageTo
 
 ;-------------------------------------------------------------------------------
 ; Залить место экрана где выводится новая фигура
 
-clearNewFigure:
+copyNewFigureBackground:
     lxi  b, 7 * 256 + 48
-    lxi  h, NEW_BACKUP_FROM
-    lxi  d, 0F8F8h - 48
-copyImage:
-    push d
-    call clearNewFigure_0
-    pop  d
-    mov  a, d
-    sui  40h
-    mov  d, a
+    lxi  d, NEW_BACKUP_FROM
+    lxi  h, 0F8F8h - 48
 
-clearNewFigure_0:
+;-------------------------------------------------------------------------------
+; Работа с изображениями
+
+copyImage:
+    ; Цикл по горизонтали
+    mov  a, h
+    sta  copyImage_h1
+    sui  040h
+    sta  copyImage_h2
+    push h
     push b
-    ;mvi  b, 7
-clearNewFigure_1:
-    push d
-    push b
-    ;mvi  c, 48
-clearNewFigure_2:
-    nop
-    call memcpy8
-clearNewFigure_3:
-    nop
+    ; Цикл по вертикали
+copyImage_4:
+    ; Плоскость 1
+copyImage_h1 = $+1
+    mvi  h, 0D0h
+copyImage_o1:
+    mov  a, m
+    stax d
+    inx  d
+    ; Плоскость 2
+copyImage_h2 = $+1
+    mvi  h, 90h
+copyImage_o2:
+    mov  a, m
+    stax d
+    inx  d
+    ; Следующая строка
+    inr  l
+    ; Конец цикла
+    dcr  c
+    jnz  copyImage_4
     pop  b
-    pop  d
-    inr  d
+    pop  h
+    ; Следующий стобец
+    inr  h
+    ; Конец цикла
     dcr  b
-    jnz  clearNewFigure_1
-    pop  b
+    jnz  copyImage
     ret
 
 ;-------------------------------------------------------------------------------

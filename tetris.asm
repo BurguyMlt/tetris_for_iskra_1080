@@ -211,10 +211,12 @@ OPCODE_NOP   = 0
 OPCODE_CMA   = 2Fh
 OPCODE_ANA_B = 0A0h
 OPCODE_ORA_B = 0B0h
+OPCODE_XRA_A = 0AFh
 
 setTextColorNt:
+    mvi  a, 1
     lxi  h, OPCODE_NOP + (OPCODE_NOP * 256)
-    lxi  d, OPCODE_NOP + (OPCODE_NOP * 256)
+    lxi  d, OPCODE_XRA_A + (OPCODE_NOP * 256)
     jmp  setTextColor1
 
 ;----------------------------------------------------------------------------------------------------------------------
@@ -282,8 +284,11 @@ font:
 ;----------------------------------------------------------------------------------------------------------------------
 
 .include "intro.inc"
+plane:
+.include "graph/plane.inc"
 packedLogo:
 .include "graph/logo.inc"
+plane_end:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
