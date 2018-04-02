@@ -18,6 +18,9 @@
 ; PRODUCT MANAGER    R. ANTON WIDJAJA
 ; PRODUCER           SEAN B. BARGER
 
+; igrab - 1406, 592
+; 
+
 .i8080
 
 ; Карта памяти после загрузки
@@ -339,6 +342,8 @@ font:
 .include "intro.inc"
 plane:
 .include "graph/plane.inc"
+igrab:
+.include "graph/igrab.inc"
 packedLogo:
 .include "graph/logo.inc"
 plane_end:
