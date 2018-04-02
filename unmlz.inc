@@ -1,3 +1,5 @@
+; Распаковщик MEGALZ для i8080
+
 unmlz:		;push	b
 		mvi	a, 80h
 UNLD:
@@ -21,7 +23,8 @@ UNST1:		mov	a, m
 UNSTA:		stax	b
 		inx	b
 
-ULOOP:		lda	unmlz_1
+unmlz_1 = $+1
+ULOOP:		mvi     a, 0
 		add	a
 		jnz	L1
 		ldax	d
@@ -167,5 +170,3 @@ GETBD1:		lxi	h, 1FFFh
 		inx	d
 		mov	l, a
 		ret
-
-unmlz_1: .db 0

@@ -16,6 +16,9 @@ PLANE_BUFFER     = (PLANE_BUFFER_2 + (19*12*2)) ; 48*12*2 = 1152 байт
 
 OPCODE_ANA_M     = 0A6h
 OPCODE_ORA_M     = 0B6h
+OPCODE_RET       = 0C9h
+
+Y_MULTIPLIER = 256
 
 ;----------------------------------------------------------------------------------------------------------------------
 
@@ -29,11 +32,8 @@ intro:
     lxi  h, packedLogo + 1024
     call memcpyq
 
-    ; При повторном вызове этой функции данные уже будут уничтожены, так как они находятся в видеопамяти
-    mvi  a, 0DEh
-    sta  packedLogo
-
-    call setTextColorNt
+    mvi a, 2
+    call setTextColor
 
     ; Гасим экран
     mvi  a, PALETTE_BLACK
@@ -52,8 +52,16 @@ intro:
     ; Показываем текст
     call paletteOn
 
+    ;jmp fly
+
     ; Ждем нажатия на любую клавиашу
     call pressAnyKey
+
+    ; При повторном вызове этой функции данные уже будут уничтожены, так как они находятся в видеопамяти
+introExit:
+    nop
+    mvi  a, OPCODE_RET
+    sta  introExit
 
     ; Гасим экран
 introOff:
@@ -63,9 +71,6 @@ introOff:
 
     ; Распаковываем лого
     lxi  d, packedLogo2
-    ldax d
-    cpi  0DEh
-    jz   intro_59
     lxi  b, LOGO_DEST
     call unmlz
 
@@ -91,7 +96,6 @@ intro_3:
     jnz  intro_3
     dcr  b
     jnz  intro_1
-intro_59:
 
     ; Показываем лого
     call paletteOn
@@ -110,11 +114,7 @@ intro_4:
     call drawText2
     jnz  intro_4
 
-;----------------------------------------------------------------------------------------------------------------------
-; Летащий самолетик
-
-Y_MULTIPLIER = 256
-
+    ; Летащий самолетик
 fly:
     ; Копируем новый блок с экарана в буфер
     call copyImageFromScreen
@@ -126,23 +126,21 @@ fly:
 
 fly_0:
     ; Адрес вывода самолетика - за левым крем экрана
-    lxi  h, 0D090h - (18 * Y_MULTIPLIER)
+    lxi  h, 0D090h - ((PLANE_WIDTH - 1) * Y_MULTIPLIER)
     shld fly_a1
 
     ; Теневой буфер
-    lxi  h, PLANE_BUFFER - (18 * PLANE_HEIGHT * 2)
+    lxi  h, PLANE_BUFFER - ((PLANE_WIDTH - 1) * PLANE_HEIGHT * 2)
     shld fly_a2
 
     ; Цикл движения от левого края экрана до правого края экрана. Шаг 8 пикселей или 1 байт
 fly_1:
     ; Вывод первой фазы
-    mvi  b, 4
+    mvi  b, 8
 fly_2:
     push b
 
     ; Сдвиг
-    lxi  h, plane
-    call shiftImage
     lxi  h, plane
     call shiftImage
 
@@ -264,23 +262,36 @@ shiftImage_1:
     lxi  b, (PLANE_WIDTH - 1) * PLANE_HEIGHT * 3 ; шаг в 12 пикселей
     dad  b
     mov  a, m
-    adc  a
+    ral
     pop  h
 
     lxi  b, PLANE_HEIGHT * 3 ; шаг
-    mvi  d, PLANE_WIDTH ; всего столбцов
+    mvi  d, PLANE_WIDTH / 2 ; всего столбцов
     push h
 intro_34:
+    ; Сдвиг
     mov  a, m
-    adc  a
+    ral
     mov  m, a
-
-    push psw
+    ; Следующий пиксель
+    sbb  a
     dad  b
-    pop  psw
-
+    rrc
+    ; Сдвиг
+    mov  a, m
+    ral
+    mov  m, a
+    ; Следующий пиксель
+    sbb  a
+    dad  b
+    rrc
+    ; Конец цикла
     dcr  d
     jnz  intro_34
+    ; Сдвиг
+    mov  a, m
+    ral
+    mov  m, a
 
     pop  h
     inx  h
@@ -330,7 +341,7 @@ scroll_1:
 ;----------------------------------------------------------------------------------------------------------------------
 
 paletteOn:
-call paletteLoadDark
+    call paletteLoadDark
     call delay8000
     mvi  a, PALETTE_CYAN
     lxi  b, PALETTE_RED * 256 + PALETTE_WHITE
@@ -359,6 +370,7 @@ paletteLoad:
     ret
 
 ;----------------------------------------------------------------------------------------------------------------------
+; Вывод изображения на экран с контролем выхода за пределы экрана
 
 copyImageSafe:
     ; Выход за левую границу
@@ -387,7 +399,7 @@ copyImageSafe:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-copyImageSafe_2
+copyImageSafe_2:
     push b
     xchg
     mvi  b, 0
@@ -425,7 +437,7 @@ introText:
     db  8-2,15-8,"VERSION"
     db  8-2,33-8,"PROGRAMMER"
     db 10-2,15-8,"ISKRA 1080 TARTU"
-    db 10-2,33-8,"ALEKSEI MOROZOV"
+    db 10-2,33-8,"ALEKSEY MOROZOV"
     db 12-2,15-8,"IBM CGA"
     db 12-2,33-8,"ENG AN JIO"
     db 13-2,15-8,"RAM RESIDENT"
