@@ -1,3 +1,6 @@
+; Искра 1080 Тарту
+
+; Все цвета
 PALETTE_WHITE        = 0
 PALETTE_YELLOW       = 1
 PALETTE_MAGENTA      = 2
@@ -15,16 +18,19 @@ PALETTE_DARK_GREEN   = 13
 PALETTE_DARK_BLUE    = 14
 PALETTE_BLACK        = 15
 
+; Порты палитры
 IO_PALETTE_0         = 90h
 IO_PALETTE_1         = 91h
 IO_PALETTE_2         = 92h
 IO_PALETTE_3         = 93h
 
+; Параметры видеопамяти
 VIDEO_PAGE_0         = 0D000h
 VIDEO_PAGE_1         = 09000h
 VIDEO_WIDTH          = 384
 VIDEO_HEIGHT         = 256
 
+; Точки входа в BIOS
 ;setCursorY_F7DC      = 0F7DCh
 ;setCursorX_F7BE      = 0F7BEh
 ;printString_F137     = 0F137h

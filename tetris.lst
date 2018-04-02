@@ -1,1100 +1,1107 @@
 0024 0000                      		.i8080
-0046 0000                      		org 234
-0047 00EA                      		fileStart:
-0048 00EA 4C 56 4F             		.db 4ch, 56h, 4fh, 56h, 2fh, 32h, 2eh, 30h, 2fh, 0d0h, "TETRIS"
-0049 00FA 00 01                		.dw entry
-0050 00FC 53 96                		.dw end1
-0051 00FE 00 01                		.dw entry
-0053 0100                      		OPCODE_MVI_M = 036h
-0057 0100                      		entry:
-0059 0100 31 00 01             		    lxi sp, 100h
-0062 0103 CD 9E 84             		    call intro
-0065 0106 AF                   		    xra  a
-0066 0107 32 47 06             		    sta  palette
-0069 010A                      		restartGame:
-0070 010A CD 21 05             		    call tetris
-0073 010D 21 36 00             		    lxi  h, OPCODE_MVI_M
-0074 0110 CD AB 06             		    call copyImageTo
-0075 0113 21 78 DF             		    lxi  h, 0FFFFh - 135 - (32 * 256)
-0076 0116 01 1E 12             		    lxi  b, 18 * 256 + 30 ; width * 256 + height
-0077 0119 11 00 00             		    lxi  d, 0
-0078 011C CD C1 06             		    call copyImage
-0081 011F 3E 02                		    mvi  a, 2
-0082 0121 CD D9 01             		    call setTextColor
-0083 0124 21 38 01             		    lxi  h, gameOverText
-0084 0127 CD 44 01             		    call drawText
-0087 012A                      		entry_1:
-0088 012A CD C8 07             		    call rand
-0089 012D CD 12 FC             		    call inkey_FC12
-0090 0130 FE 0D                		    cpi  13
-0091 0132 C2 2A 01             		    jnz  entry_1
-0094 0135 C3 0A 01             		    jmp  restartGame
-0098 0138                      		gameOverText:
-0099 0138 09 14 47             		    db 9,20,"GAME OVER",0
-0103 0144                      		drawText:
-0104 0144 CD 4B 01             		    call drawText2
-0105 0147 C2 44 01             		    jnz  drawText
-0106 014A C9                   		    ret
-0108 014B                      		drawText2:
-0109 014B 7E                   		    mov  a, m
-0110 014C B7                   		    ora  a
-0111 014D C8                   		    rz
-0112 014E 23                   		    inx  h
-0113 014F FE 20                		    cpi  32
-0114 0151 D2 67 01             		    jnc  drawText_1
-0115 0154 5F                   		    mov  e, a
-0116 0155 87                   		    add  a ; *2
-0117 0156 83                   		    add  e ; *3
-0118 0157 87                   		    add  a ; *6
-0119 0158 83                   		    add  e ; *7
-0120 0159 87                   		    add  a ; *14
-0121 015A 2F                   		    cma
-0122 015B 32 B8 01             		    sta  drawCharAddr
-0123 015E 3E FF                		    mvi  a, 0FFh
-0124 0160 96                   		    sub  m
-0125 0161 23                   		    inx  h
-0126 0162 32 B9 01             		    sta  drawCharAddr+1
-0127 0165 7E                   		    mov  a, m
-0128 0166 23                   		    inx  h
-0129 0167                      		drawText_1:
-0130 0167 E5                   		    push h
-0131 0168 CD A9 01             		    call drawChar
-0132 016B 35                   		    dcr  m
-0133 016C E1                   		    pop  h
-0134 016D AF                   		    xra  a ; return nz
-0135 016E 3C                   		    inr  a
-0136 016F C9                   		    ret
-0140 0170                      		pressAnyKey:
-0142 0170                      		pressAnyKey_1:
-0143 0170 CD 12 FC             		    call inkey_FC12
-0144 0173 FE FF                		    cpi  0FFh
-0145 0175 C2 70 01             		    jnz  pressAnyKey_1
-0146 0178                      		pressAnyKey_2:
-0147 0178 CD C8 07             		    call rand
-0148 017B CD 12 FC             		    call inkey_FC12
-0149 017E FE FF                		    cpi  0FFh
-0150 0180 CA 78 01             		    jz   pressAnyKey_2
-0151 0183 C9                   		    ret
-0155 0184                      		memcpy8back:
-0156 0184 1A                   		    ldax d
-0157 0185 77                   		    mov m, a
-0158 0186 1B                   		    dcx d
-0159 0187 2B                   		    dcx h
-0160 0188 0B                   		    dcx b
-0161 0189 79                   		    mov a, c
-0162 018A B0                   		    ora b
-0163 018B C2 84 01             		    jnz memcpy8back
-0164 018E C9                   		    ret
-0168 018F                      		memcpy8:
-0169 018F 7E                   		    mov  a, m
-0170 0190 12                   		    stax d
-0171 0191 13                   		    inx  d
-0172 0192 23                   		    inx  h
-0173 0193 0D                   		    dcr  c
-0174 0194 C2 8F 01             		    jnz  memcpy8
-0175 0197 C9                   		    ret
-0179 0198                      		memset8:
-0180 0198 77                   		    mov  m, a
-0181 0199 23                   		    inx  h
-0182 019A 0D                   		    dcr  c
-0183 019B C2 98 01             		    jnz  memset8
-0184 019E C9                   		    ret
-0188 019F                      		delay8000:
-0189 019F 11 00 80             		    lxi  d, 08000h
-0190 01A2                      		delay:
-0191 01A2 1B                   		    dcx  d
-0192 01A3 7A                   		    mov  a, d
-0193 01A4 B3                   		    ora  e
-0194 01A5 C2 A2 01             		    jnz  delay
-0195 01A8 C9                   		    ret
-0199 01A9                      		FONT_HEIGHT = 12
-0201 01A9                      		drawChar:
-0204 01A9 6F                   		    mov  l, a
-0205 01AA 26 00                		    mvi  h, 0
-0206 01AC 29                   		    dad  h ; *2
-0207 01AD 29                   		    dad  h ; *4
-0208 01AE 54                   		    mov  d, h
-0209 01AF 5D                   		    mov  e, l
-0210 01B0 29                   		    dad  h ; *8
-0211 01B1 19                   		    dad  d ; *12
-0212 01B2 11 5A 80             		    lxi  d, font - (' ' * 12)
-0213 01B5 19                   		    dad  d
-0214 01B6 EB                   		    xchg
-0217 01B7                      		drawCharAddr = $+1
-0218 01B7 21 00 D0             		    lxi  h, 0D000h
-0221 01BA 0E 0C                		    mvi  c, FONT_HEIGHT
-0222 01BC                      		drawChar_1:
-0223 01BC C5                   		    push b
-0226 01BD 46                   		    mov  b, m
-0227 01BE 1A                   		    ldax d
-0228 01BF                      		drawChar_cma1:
-0229 01BF 2F                   		    cma    ; nop
-0230 01C0 A0                   		    ana  b ; ora b
-0231 01C1 4F                   		    mov  c, a
-0234 01C2 E5                   		    push h
-0235 01C3 7C                   		    mov  a, h
-0236 01C4 DE 40                		    sbi  40h
-0237 01C6 67                   		    mov  h, a
-0240 01C7 46                   		    mov  b, m
-0241 01C8 1A                   		    ldax d
-0242 01C9                      		drawChar_cma2:
-0243 01C9 2F                   		    cma    ; nop
-0244 01CA A0                   		    ana  b ; ora b
-0247 01CB 77                   		    mov  m, a
-0248 01CC E1                   		    pop  h
-0249 01CD 71                   		    mov  m, c
-0252 01CE 23                   		    inx  h
-0253 01CF 13                   		    inx  d
-0256 01D0 C1                   		    pop  b
-0257 01D1 0D                   		    dcr  c
-0258 01D2 C2 BC 01             		    jnz  drawChar_1
-0261 01D5 21 B9 01             		    lxi h, drawCharAddr+1
-0262 01D8 C9                   		    ret
-0266 01D9                      		OPCODE_NOP   = 0
-0267 01D9                      		OPCODE_CMA   = 2Fh
-0268 01D9                      		OPCODE_ANA_B = 0A0h
-0269 01D9                      		OPCODE_ORA_B = 0B0h
-0270 01D9                      		OPCODE_XRA_A = 0AFh
-0281 01D9                      		setTextColor:
-0282 01D9 21 2F A0             		    lxi  h, OPCODE_CMA + (OPCODE_ANA_B * 256)
-0283 01DC 11 00 B0             		    lxi  d, OPCODE_NOP + (OPCODE_ORA_B * 256)
-0284 01DF                      		setTextColor1:
-0285 01DF 0F                   		    rrc
-0286 01E0 D2 E5 01             		    jnc  setTextColor_1
-0287 01E3 EB                   		    xchg
-0288 01E4 2F                   		    cma
-0289 01E5                      		setTextColor_1:
-0290 01E5 22 BF 01             		    shld drawChar_cma1
-0291 01E8 0F                   		    rrc
-0292 01E9 D2 ED 01             		    jnc  setTextColor_2
-0293 01EC EB                   		    xchg
-0294 01ED                      		setTextColor_2:
-0295 01ED 22 C9 01             		    shld drawChar_cma2
-0296 01F0 C9                   		    ret
-0300 01F1                      		.include "tetris.inc"
-0001 01F1 00 00 00             		map  db 232 dup(0)
-0004 02D9                      		WIDTH     = 10
-0005 02D9                      		HEIGHT    = 20
-0006 02D9                      		BPL       = WIDTH+1
-0007 02D9                      		START     = 1
-0008 02D9                      		MAP_SIZE  = (START + (BPL * (HEIGHT + 1)))
-0012 02D9 C8 6E 3C             		speeds         db 200,110,60,40,30,15 ; Скорости для каждого уровня
-0013 02DF 00                   		timer          db 0
-0014 02E0 00                   		lastPressedKey db 0
-0015 02E1 00                   		figureA        db 0
-0016 02E2 00                   		figureO        db 0 ;  O+С должны быть подряд
-0017 02E3 00                   		figureC        db 0
-0018 02E4 00                   		nextO          db 0 ;  O+С должны быть подряд
-0019 02E5 00                   		nextC          db 0
-0020 02E6 00 00                		score          dw 0
-0021 02E8 00 00                		bestScore      dw 0
-0022 02EA 00                   		level          db 0
-0023 02EB 00                   		gameOverFlag   db 0
-0028 02EC                      		redrawAll:
-0029 02EC CD D4 05             		    call drawBackgrond
-0030 02EF CD BE 07             		    call invalidatePlayfield
-0031 02F2 CD 8F 06             		    call redrawNewFigure
-0032 02F5 CD 90 07             		    call redrawMap
-0033 02F8 CD 5E 06             		    call redrawScore
-0034 02FB CD 3C 06             		    call paletteShow
-0035 02FE C9                   		    ret
-0039 02FF                      		checkFigure:
-0041 02FF 7E                   		    mov a, m
-0042 0300 B7                   		    ora a
-0043 0301 C9                   		    ret
-0050 0302                      		drawFigure:
-0051 0302 3A E3 02             		    lda  figureC
-0052 0305 77                   		    mov  m, a
-0053 0306 AF                   		    xra  a ; return z
-0054 0307 C9                   		    ret
-0058 0308                      		clearFigure:
-0059 0308 36 00                		    mvi m, 0
-0060 030A AF                   		    xra a ; return z
-0061 030B C9                   		    ret
-0071 030C                      		decodeFigure2:
-0072 030C 6F                   		    mov  l, a
-0073 030D E6 03                		    ani  3
-0074 030F 57                   		    mov  d, a ; d - это X
-0075 0310 7D                   		    mov  a, l
-0076 0311 0F                   		    rrc
-0077 0312 0F                   		    rrc
-0078 0313 E6 03                		    ani  3
-0079 0315 5F                   		    mov  e, a ; e - это Y
-0080 0316 87                   		    add  a ; *2
-0081 0317 87                   		    add  a ; *4
-0082 0318 83                   		    add  e ; *5
-0083 0319 87                   		    add  a ; *10
-0084 031A 83                   		    add  e ; *11
-0085 031B 82                   		    add  d
-0086 031C 47                   		    mov  b, a
-0087 031D 3A E1 02             		    lda  figureA
-0088 0320 80                   		    add  b
-0089 0321 26 00                		    mvi  h, 0
-0090 0323 6F                   		    mov  l, a
-0091 0324 01 F2 01             		    lxi  b, map + START
-0092 0327 09                   		    dad  b
-0095 0328                      		decodeFigure3 = $+1
-0096 0328 C3 00 00             		    jmp 0
-0101 032B                      		decodeFigure1:
-0102 032B 6F                   		    mov  l, a
-0103 032C E5                   		    push h
-0104 032D CD 0C 03             		    call decodeFigure2
-0105 0330 E1                   		    pop  h
-0106 0331 C0                   		    rnz
-0107 0332 7D                   		    mov  a, l
-0108 0333 0F                   		    rrc
-0109 0334 0F                   		    rrc
-0110 0335 0F                   		    rrc
-0111 0336 0F                   		    rrc
-0112 0337 C3 0C 03             		    jmp  decodeFigure2
-0117 033A                      		figures:
-0118 033A 51 84 10             		    db 81,132,16,101,81,132,16,101,64,149,84,33,64,149,84,33,81,217,84,118
-0119 034E 51 D9 54             		    db 81,217,84,118,16,84,16,84,16,84,16,84,65,101,64,88,16,82,81,73,64
-0120 0363 98 10 42             		    db 152,16,66,16,149,84,38,81,137,64,101,16,132,16,98
-0122 0372                      		decodeFigure:
-0123 0372 3A E2 02             		    lda  figureO
-0125 0375                      		decodeFigureEx:
-0126 0375 22 29 03             		    shld decodeFigure3
-0129 0378 6F                   		    mov  l, a
-0130 0379 26 00                		    mvi  h, 0
-0131 037B 11 3A 03             		    lxi  d, figures
-0132 037E 19                   		    dad  d
-0133 037F 7E                   		    mov  a, m
-0134 0380 E5                   		    push h
-0135 0381 CD 2B 03             		    call decodeFigure1
-0136 0384 E1                   		    pop  h
-0137 0385 C0                   		    rnz
-0140 0386 23                   		    inx  h
-0141 0387 7E                   		    mov  a, m
-0142 0388 C3 2B 03             		    jmp  decodeFigure1
-0146 038B                      		gen:
-0148 038B CD C8 07             		    call rand
-0149 038E                      		gen_2:
-0150 038E DE 07                		    sbi  7
-0151 0390 D2 8E 03             		    jnc  gen_2
-0152 0393 C6 07                		    adi  7
-0154 0395 87                   		    add  a
-0155 0396 87                   		    add  a
-0156 0397 87                   		    add  a
-0157 0398 32 E4 02             		    sta  nextO
-0160 039B CD C8 07             		    call rand
-0161 039E                      		gen_3:
-0162 039E DE 03                		    sbi  3
-0163 03A0 D2 9E 03             		    jnc  gen_3
-0164 03A3 C6 03                		    adi  3
-0165 03A5 3C                   		    inr  a
-0166 03A6 32 E5 02             		    sta  nextC
-0167 03A9 C9                   		    ret
-0171 03AA                      		newFigureEx:
-0173 03AA 2A E4 02             		    lhld nextO
-0174 03AD 22 E2 02             		    shld figureO
-0177 03B0 3E 04                		    mvi  a, 4
-0178 03B2 32 E1 02             		    sta  figureA
-0181 03B5 21 FF 02             		    lxi  h, checkFigure
-0182 03B8 CD 72 03             		    call decodeFigure
-0183 03BB CA C3 03             		    jz   newFigure_1
-0184 03BE 3E 01                		    mvi  a, 1
-0185 03C0 32 EB 02             		    sta  gameOverFlag
-0186 03C3                      		newFigure_1:
-0189 03C3 21 02 03             		    lxi  h, drawFigure
-0190 03C6 CD 72 03             		    call decodeFigure
-0193 03C9 C3 8B 03             		    jmp gen
-0197 03CC                      		newFigure:
-0198 03CC CD AA 03             		    call newFigureEx
-0201 03CF CD 8F 06             		    call redrawNewFigure
-0204 03D2 C3 90 07             		    jmp  redrawMap
-0208 03D5                      		move:
-0210 03D5 C5                   		    push b
-0211 03D6 21 08 03             		    lxi  h, clearFigure
-0212 03D9 CD 72 03             		    call decodeFigure
-0213 03DC C1                   		    pop  b
-0216 03DD 3A E1 02             		    lda figureA
-0217 03E0 F5                   		    push psw
-0218 03E1 81                   		    add c
-0219 03E2 32 E1 02             		    sta figureA
-0222 03E5 3A E2 02             		    lda  figureO
-0223 03E8 F5                   		    push psw
-0226 03E9 05                   		    dcr b
-0227 03EA C2 FA 03             		    jnz move_1
-0229 03ED 47                   		    mov b, a
-0230 03EE 3C                   		    inr a
-0231 03EF 3C                   		    inr a
-0232 03F0 E6 06                		    ani 6
-0233 03F2 4F                   		    mov c, a
-0234 03F3 78                   		    mov a, b
-0235 03F4 E6 F9                		    ani 0F9h
-0236 03F6 81                   		    add c
-0237 03F7 32 E2 02             		    sta figureO
-0239 03FA                      		move_1:
-0242 03FA 21 FF 02             		    lxi  h, checkFigure
-0243 03FD CD 72 03             		    call decodeFigure
-0244 0400 CA 13 04             		    jz   move_2
-0248 0403 F1                   		    pop psw
-0249 0404 32 E2 02             		    sta figureO
-0250 0407 F1                   		    pop psw
-0251 0408 32 E1 02             		    sta figureA
-0254 040B 21 02 03             		    lxi  h, drawFigure
-0255 040E CD 72 03             		    call decodeFigure
-0258 0411 AF                   		    xra a
-0259 0412 C9                   		    ret
-0261 0413                      		move_2:
-0263 0413 F1                   		    pop psw
-0264 0414 F1                   		    pop psw
-0267 0415 21 02 03             		    lxi  h, drawFigure
-0268 0418 CD 72 03             		    call decodeFigure
-0271 041B CD 90 07             		    call redrawMap
-0274 041E AF                   		    xra a
-0275 041F 3C                   		    inr a
-0276 0420 C9                   		    ret
-0282 0421                      		deleteLine:
-0283 0421 3E 07                		    mvi  a, 7
-0284 0423                      		deleteLine_1:
-0285 0423 F5                   		    push psw
-0286 0424 E5                   		    push h
-0287 0425 0E 0A                		    mvi  c, WIDTH
-0288 0427 D3 B0                		    out  0B0h
-0289 0429 CD 98 01             		    call memset8
-0290 042C CD 90 07             		    call redrawMap
-0291 042F E1                   		    pop  h
-0292 0430 F1                   		    pop  psw
-0293 0431 3D                   		    dcr  a
-0294 0432 C2 23 04             		    jnz  deleteLine_1
-0298 0435 2B                   		    dcx  h
-0301 0436 54                   		    mov  d, h
-0302 0437 5D                   		    mov  e, l
-0303 0438 01 0B 00             		    lxi  b, BPL
-0304 043B 09                   		    dad  b
-0307 043C                      		deleteLine_1:
-0308 043C 1A                   		    ldax d
-0309 043D 1B                   		    dcx  d
-0310 043E 77                   		    mov  m, a
-0311 043F 2B                   		    dcx  h
-0314 0440 7B                   		    mov  a, e
-0315 0441 D6 F1                		    sui  map
-0316 0443 7A                   		    mov  a, d
-0317 0444 DE 01                		    sbi  (map/256)
-0318 0446 D2 3C 04             		    jnc  deleteLine_1
-0321 0449 21 F2 01             		    lxi  h, map + START
-0322 044C AF                   		    xra  a
-0323 044D 0E 0A                		    mvi  c, WIDTH
-0324 044F CD 98 01             		    call memset8
-0328 0452 C3 90 07             		    jmp  redrawMap
-0333 0455                      		clearLine:
-0338 0455 06 0A                		    mvi  b, WIDTH
-0339 0457                      		clearLine_1:
-0340 0457 36 00                		    mvi  m, 0
-0341 0459 23                   		    inx  h
-0342 045A 05                   		    dcr  b
-0343 045B C2 57 04             		    jnz  clearLine_1
-0344 045E C9                   		    ret
-0348 045F                      		newGame:
-0349 045F CD 8B 03             		    call gen
-0350 0462 AF                   		    xra  a
-0351 0463 32 EA 02             		    sta  level
-0352 0466 32 E6 02             		    sta  score + 0
-0353 0469 32 E7 02             		    sta  score + 1
-0354 046C 32 EB 02             		    sta  gameOverFlag
-0359 046F 21 F1 01             		    lxi  h, map
-0360 0472 0E 14                		    mvi  c, HEIGHT
-0361 0474                      		newGame_1:
-0362 0474 36 01                		    mvi  m, 1
-0363 0476 23                   		    inx  h
-0364 0477 CD 55 04             		    call clearLine
-0365 047A 0D                   		    dcr  c
-0366 047B C2 74 04             		    jnz  newGame_1
-0367 047E 0E 0C                		    mvi  c, BPL + 1
-0368 0480                      		newGame_1a:
-0369 0480 36 01                		    mvi  m, 1
-0370 0482 23                   		    inx  h
-0371 0483 0D                   		    dcr  c
-0372 0484 C2 80 04             		    jnz  newGame_1a
-0375 0487 CD AA 03             		    call  newFigureEx
-0377 048A CD EC 02             		    call  redrawAll
-0379 048D C9                   		    ret
-0383 048E                      		checkLine:
-0387 048E 0E 0A                		    mvi  c, WIDTH
-0388 0490                      		checkLine_1:
-0389 0490 7E                   		    mov  a, m
-0390 0491 B7                   		    ora  a
-0391 0492 C8                   		    rz
-0392 0493 23                   		    inx  h
-0393 0494 0D                   		    dcr  c
-0394 0495 C2 90 04             		    jnz  checkLine_1
-0397 0498 AF                   		    xra a
-0398 0499 3C                   		    inr a
-0399 049A C9                   		    ret
-0415 049B                      		checkLines:
-0416 049B 3E C9                		    mvi  a, 0C9h
-0417 049D 32 D9 04             		    sta  checkLines_3
-0420 04A0 21 C3 02             		    lxi h, map + START + (BPL * (HEIGHT - 1))
-0421 04A3                      		checkLines_1:
-0425 04A3 E5                   		    push h
-0426 04A4 CD 8E 04             		    call checkLine
-0427 04A7 E1                   		    pop  h
-0428 04A8 CA CC 04             		    jz checkLines_2
-0430 04AB E5                   		    push h
-0431 04AC CD 21 04             		    call deleteLine
-0433 04AF 2A E6 02             		    lhld score
-0434 04B2 23                   		    inx  h
-0435 04B3 22 E6 02             		    shld score
-0437 04B6 EB                   		    xchg
-0438 04B7 2A E8 02             		    lhld bestScore
-0439 04BA 7D                   		    mov  a, l
-0440 04BB 93                   		    sub  e
-0441 04BC 7C                   		    mov  a, h
-0442 04BD                      		    sbc  d
-0443 04BD D2 C4 04             		    jnc checkLines_4
-0444 04C0 EB                   		    xchg
-0445 04C1 22 E8 02             		    shld bestScore
-0446 04C4                      		checkLines_4:
-0448 04C4 AF                   		    xra  a
-0449 04C5 32 D9 04             		    sta  checkLines_3
-0450 04C8 E1                   		    pop  h
-0452 04C9 C3 A3 04             		    jmp checkLines_1
-0453 04CC                      		checkLines_2:
-0456 04CC 11 F5 FF             		    lxi d, 65536-BPL
-0457 04CF 19                   		    dad d
-0459 04D0 7D                   		    mov a, l
-0460 04D1 D6 F3                		    sui (map + START + 1)
-0461 04D3 7C                   		    mov a, h
-0462 04D4 DE 01                		    sbi (map + START + 1) / 256
-0463 04D6 D2 A3 04             		    jnc checkLines_1
-0465 04D9                      		checkLines_3:
-0466 04D9 C9                   		    ret
-0468 04DA CD 5E 06             		    call redrawScore
-0470 04DD 2A E6 02             		    lhld score
-0471 04E0 EB                   		    xchg
-0472 04E1 21 1E 00             		    lxi  h, 30
-0473 04E4 CD 8F 05             		    call div16
-0474 04E7 7D                   		    mov  a, l
-0475 04E8                      		setLevel1:
-0477 04E8 2A EA 02             		    lhld level
-0478 04EB BD                   		    cmp  l
-0479 04EC C8                   		    rz
-0480 04ED D8                   		    rc
-0482 04EE FE 06                		    cpi  LEVELS_COUNT
-0483 04F0 D0                   		    rnc
-0484 04F1 32 EA 02             		    sta  level
-0485 04F4 C3 EC 02             		    jmp  redrawAll
-0489 04F7                      		nextLevel:
-0490 04F7 3A EA 02             		    lda  level
-0491 04FA 3C                   		    inr  a
-0492 04FB CD E8 04             		    call setLevel1
-0493 04FE C3 24 05             		    jmp  gameLoop
-0497 0501                      		tick:
-0499 0501 01 0B 00             		    lxi  b, BPL
-0500 0504 CD D5 03             		    call move
-0502 0507 C0                   		    rnz
-0505 0508 CD 9B 04             		    call checkLines
-0508 050B CD CC 03             		    call newFigure
-0511 050E C9                   		    ret
-0514 050F                      		down:
-0516 050F 01 0B 00             		    lxi  b, BPL
-0517 0512 CD D5 03             		    call move
-0519 0515 C2 0F 05             		    jnz  down
-0522 0518 CD 9B 04             		    call checkLines
-0525 051B CD CC 03             		    call newFigure
-0529 051E C3 24 05             		    jmp gameLoop
-0533 0521                      		tetris:
-0534 0521 CD 5F 04             		    call newGame
-0536 0524                      		gameLoop:
-0537 0524 3A EB 02             		    lda  gameOverFlag
-0538 0527 B7                   		    ora  a
-0539 0528 C0                   		    rnz
-0541 0529 3A DF 02             		    lda  timer
-0542 052C 3D                   		    dcr  a
-0543 052D C2 3D 05             		    jnz  gameLoop_2
-0545 0530 CD 01 05             		    call tick
-0547 0533 2A EA 02             		    lhld level ; 0..5
-0548 0536 26 00                		    mvi  h, 0
-0549 0538 11 D9 02             		    lxi  d, speeds
-0550 053B 19                   		    dad  d
-0551 053C 7E                   		    mov  a, m
-0553 053D                      		gameLoop_2:
-0554 053D 32 DF 02             		    sta  timer ; by level
-0557 0540 CD C8 07             		    call rand
-0560 0543 CD 12 FC             		    call inkey_FC12
-0563 0546 2A E0 02             		    lhld lastPressedKey
-0564 0549 BD                   		    cmp  l
-0565 054A C2 52 05             		    jnz  gameLoop_1a
-0566 054D 3E FF                		    mvi  a, 0FFh
-0567 054F C3 55 05             		    jmp  gameLoop_2a
-0568 0552                      		gameLoop_1a:
-0569 0552 32 E0 02             		    sta  lastPressedKey
-0570 0555                      		gameLoop_2a:
-0572 0555                      		gameLoop_185:
-0574 0555 FE 88                		    cpi  136
-0575 0557 C2 63 05             		    jnz  gameLoop_16
-0576 055A 01 00 01             		    lxi  b, 100h
-0577 055D CD D5 03             		    call move
-0578 0560 C3 24 05             		    jmp  gameLoop
-0579 0563                      		gameLoop_16:
-0580 0563 FE 31                		    cpi  '1'
-0581 0565 CA F7 04             		    jz   nextLevel
-0584 0568 FE 82                		    cpi  130
-0585 056A CA 0F 05             		    jz   down
-0588 056D FE 84                		    cpi  132
-0589 056F C2 78 05             		    jnz  gameLoop_18
-0590 0572 01 FF 00             		    lxi  b, 0FFh
-0591 0575 CD D5 03             		    call move
-0592 0578                      		gameLoop_18:
-0594 0578 FE 86                		    cpi  134
-0595 057A C2 86 05             		    jnz  gameLoop_19
-0596 057D 01 01 00             		    lxi  b, 01h
-0597 0580 CD D5 03             		    call move
-0598 0583 C3 24 05             		    jmp  gameLoop
-0599 0586                      		gameLoop_19:
-0600 0586 01 00 00             		    lxi  b, 0
-0601 0589 CD D5 03             		    call move
-0602 058C C3 24 05             		    jmp  gameLoop
-0301 058F                      		.include "bios.inc"
-0001 058F                      		PALETTE_WHITE        = 0
-0002 058F                      		PALETTE_YELLOW       = 1
-0003 058F                      		PALETTE_MAGENTA      = 2
-0004 058F                      		PALETTE_RED          = 3
-0005 058F                      		PALETTE_CYAN         = 4
-0006 058F                      		PALETTE_GREEN        = 5
-0007 058F                      		PALETTE_BLUE         = 6
-0008 058F                      		PALETTE_XXX          = 7
-0009 058F                      		PALETTE_DARK_GRAY    = 8
-0010 058F                      		PALETTE_DARK_YELLOW  = 9
-0011 058F                      		PALETTE_DARK_MAGENTA = 10
-0012 058F                      		PALETTE_DARK_RED     = 11
-0013 058F                      		PALETTE_DARK_CYAN    = 12
-0014 058F                      		PALETTE_DARK_GREEN   = 13
-0015 058F                      		PALETTE_DARK_BLUE    = 14
-0016 058F                      		PALETTE_BLACK        = 15
-0018 058F                      		IO_PALETTE_0         = 90h
-0019 058F                      		IO_PALETTE_1         = 91h
-0020 058F                      		IO_PALETTE_2         = 92h
-0021 058F                      		IO_PALETTE_3         = 93h
-0023 058F                      		VIDEO_PAGE_0         = 0D000h
-0024 058F                      		VIDEO_PAGE_1         = 09000h
-0025 058F                      		VIDEO_WIDTH          = 384
-0026 058F                      		VIDEO_HEIGHT         = 256
-0035 058F                      		inkey_FC12           = 0FC12h
-0302 058F                      		.include "div16.inc"
-0003 058F                      		div16:
-0004 058F 7C                   		    MOV  A,H
-0005 0590 B5                   		    ORA  L
-0006 0591 C8                   		    RZ
-0007 0592 01 00 00             		    LXI  B,0000
-0008 0595 C5                   		    PUSH B
-0009 0596                      		div16_1:
-0010 0596 7B                   		    MOV  A,E
-0011 0597 95                   		    SUB  L
-0012 0598 7A                   		    MOV  A,D
-0013 0599 9C                   		    SBB  H
-0014 059A DA A2 05             		    JC   div16_2
-0015 059D E5                   		    PUSH H
-0016 059E 29                   		    DAD  H
-0017 059F D2 96 05             		    JNC  div16_1
-0018 05A2                      		div16_2:
-0019 05A2 21 00 00             		    LXI  H,0000
-0020 05A5                      		div16_3:
-0021 05A5 C1                   		    POP  B
-0022 05A6 78                   		    MOV  A, B
-0023 05A7 B1                   		    ORA  C
-0024 05A8 C8                   		    RZ
-0025 05A9 29                   		    DAD  H
-0026 05AA D5                   		    PUSH D
-0027 05AB 7B                   		    MOV  A, E
-0028 05AC 91                   		    SUB  C
-0029 05AD 5F                   		    MOV  E, A
-0030 05AE 7A                   		    MOV  A, D
-0031 05AF 98                   		    SBB  B
-0032 05B0 57                   		    MOV  D, A
-0033 05B1 DA B9 05             		    JC   div16_4
-0034 05B4 23                   		    INX  H
-0035 05B5 C1                   		    POP  B
-0036 05B6 C3 A5 05             		    JMP  div16_3
-0037 05B9                      		div16_4:
-0038 05B9 D1                   		    POP  D
-0039 05BA C3 A5 05             		    JMP  div16_3
-0303 05BD                      		.include "graph.inc"
-0001 05BD                      		SYS_BACKUP_FROM = 0C800h
-0002 05BD                      		SYS_BACKUP_SIZE = 80h
-0003 05BD                      		SYS_BACKUP_TO   = 3h
-0005 05BD                      		NEW_BACKUP_FROM = 0C000h
-0006 05BD                      		SCO_BACKUP_FROM = 0C000h + (7 * 48 * 2)
-0008 05BD                      		OPCODE_XCHG = 0EBh
-0009 05BD                      		OPCODE_NOP = 000h
-0014 05BD                      		clearScreen:
-0015 05BD CD CD 05             		    call clearScreen1
-0020 05C0                      		clearScreen2:
-0021 05C0 21 00 90             		    lxi  h, VIDEO_PAGE_1
-0022 05C3 3E C0                		    mvi  a, 0C0h
-0027 05C5                      		clearMem:
-0028 05C5 36 00                		    mvi  m, 0
-0029 05C7 23                   		    inx  h
-0030 05C8 BC                   		    cmp  h
-0031 05C9 C2 C5 05             		    jnz  clearMem
-0032 05CC C9                   		    ret
-0037 05CD                      		clearScreen1:
-0038 05CD 21 00 D0             		    lxi  h, VIDEO_PAGE_0
-0039 05D0 AF                   		    xra  a
-0040 05D1 C3 C5 05             		    jmp  clearMem
-0045 05D4                      		drawBackgrond:
-0047 05D4 11 7F C8             		    lxi  d, SYS_BACKUP_FROM + SYS_BACKUP_SIZE - 1
-0048 05D7 21 82 00             		    lxi  h, SYS_BACKUP_TO + SYS_BACKUP_SIZE - 1
-0049 05DA 01 80 00             		    lxi  b, SYS_BACKUP_SIZE
-0050 05DD CD 84 01             		    call memcpy8back
-0053 05E0 06 08                		    mvi  b, 8
-0054 05E2 CD 46 06             		    call setPaletteEx
-0055 05E5 CD 9F 01             		    call delay8000
-0056 05E8 3E 0F                		    mvi  a, PALETTE_BLACK
-0057 05EA D3 90                		    out  IO_PALETTE_0
-0058 05EC D3 91                		    out  IO_PALETTE_1
-0059 05EE D3 92                		    out  IO_PALETTE_2
-0060 05F0 D3 93                		    out  IO_PALETTE_3
-0063 05F2 3A EA 02             		    lda  level
-0064 05F5 57                   		    mov  d, a
-0065 05F6 87                   		    add  a ;*2
-0066 05F7 87                   		    add  a ;*4
-0067 05F8 82                   		    add  d ;*5
-0068 05F9 16 00                		    mvi  d, 0
-0069 05FB 5F                   		    mov  e, a
-0070 05FC 21 A3 08             		    lxi  h, levels
-0071 05FF 19                   		    dad  d
-0072 0600 5E                   		    mov  e, m
-0073 0601 23                   		    inx  h
-0074 0602 56                   		    mov  d, m
-0075 0603 23                   		    inx  h
-0076 0604 7E                   		    mov  a, m ; Цвет фигуры и текста
-0077 0605 32 F6 06             		    sta  redrawNewFigure1_1
-0078 0608 23                   		    inx  h
-0079 0609 22 47 06             		    shld palette ; Палитра
-0081 060C D5                   		    push d
-0082 060D CD D9 01             		    call setTextColor
-0083 0610 D1                   		    pop  d
-0086 0611 01 00 90             		    lxi  b, VIDEO_PAGE_1
-0087 0614 CD D3 07             		    call unmlz
-0090 0617 21 FF FF             		    lxi  h, 0FFFFh
-0091 061A 11 FF EF             		    lxi  d, 0EFFFh
-0092 061D 01 00 30             		    lxi  b, 03000h
-0093 0620 CD 84 01             		    call memcpy8back
-0097 0623 11 82 00             		    lxi  d, SYS_BACKUP_TO + SYS_BACKUP_SIZE - 1
-0098 0626 21 7F C8             		    lxi  h, SYS_BACKUP_FROM + SYS_BACKUP_SIZE - 1
-0099 0629 01 80 00             		    lxi  b, SYS_BACKUP_SIZE
-0100 062C CD 84 01             		    call memcpy8back
-0102 062F CD A8 06             		    call copyImageFromScreen
-0103 0632 CD B8 06             		    call copyNewFigureBackground
-0104 0635 CD 9C 06             		    call copyScoreBackground
-0105 0638 CD B2 06             		    call copyImageToScreen
-0107 063B C9                   		    ret
-0111 063C                      		paletteShow:
-0112 063C 06 08                		    mvi  b, 8
-0113 063E CD 46 06             		    call setPaletteEx
-0114 0641 CD 9F 01             		    call delay8000
-0115 0644 06 00                		    mvi  b, 0
-0116 0646                      		setPaletteEx:
-0117 0646                      		palette = $+1
-0118 0646 21 00 00             		    lxi  h, 0
-0119 0649 AF                   		    xra  a
-0120 064A B5                   		    ora  l
-0121 064B C8                   		    rz
-0123 064C 3E 0F                		    mvi  a, 15
-0124 064E B0                   		    ora  b
-0125 064F D3 90                		    out  IO_PALETTE_0
-0127 0651 7E                   		    mov  a, m
-0128 0652 B0                   		    ora  b
-0129 0653 D3 91                		    out  IO_PALETTE_1
-0130 0655 23                   		    inx  h
-0131 0656 7E                   		    mov  a, m
-0132 0657 B0                   		    ora  b
-0133 0658 D3 92                		    out  IO_PALETTE_2
-0135 065A 78                   		    mov  a, b
-0136 065B D3 93                		    out  IO_PALETTE_3
-0137 065D C9                   		    ret
-0142 065E                      		redrawScore:
-0143 065E CD 9C 06             		    call copyScoreBackground
-0145 0661 21 E7 D2             		    lxi  h, 0FFFFh-24-(45*256)
-0146 0664 22 B8 01             		    shld drawCharAddr
-0147 0667 2A E6 02             		    lhld score
-0148 066A CD 79 06             		    call drawNumber
-0150 066D 21 D7 D2             		    lxi  h, 0FFFFh-40-(45*256)
-0151 0670 22 B8 01             		    shld drawCharAddr
-0152 0673 2A E8 02             		    lhld bestScore
-0153 0676 C3 79 06             		    jmp  drawNumber
-0158 0679                      		drawNumber:
-0159 0679 EB                   		    xchg
-0160 067A                      		redrawScore_1:
-0162 067A 21 0A 00             		    lxi  h, 10
-0163 067D CD 8F 05             		    call div16
-0165 0680 E5                   		    push h
-0166 0681 7B                   		    mov  a, e
-0167 0682 C6 30                		    adi  '0'
-0168 0684 CD A9 01             		    call drawChar
-0169 0687 34                   		    inr  m
-0170 0688 D1                   		    pop  d
-0172 0689 7A                   		    mov  a, d
-0173 068A B3                   		    ora  e
-0174 068B C2 7A 06             		    jnz redrawScore_1
-0175 068E C9                   		    ret
-0180 068F                      		redrawNewFigure:
-0182 068F CD B8 06             		    call copyNewFigureBackground
-0186 0692 3A E4 02             		    lda  nextO
-0187 0695 21 E3 06             		    lxi  h, redrawNewFigure1
-0188 0698 CD 75 03             		    call decodeFigureEx
-0189 069B C9                   		    ret
-0193 069C                      		copyScoreBackground:
-0194 069C 01 28 05             		    lxi  b, 5 * 256 + 40
-0195 069F 11 A0 C2             		    lxi  d, SCO_BACKUP_FROM
-0196 06A2 21 D7 D2             		    lxi  h, 0FFFFh-40-(45*256)
-0197 06A5 C3 C1 06             		    jmp  copyImage
-0201 06A8                      		OPCODE_MOV_A_M = 7Eh
-0202 06A8                      		OPCODE_MOV_M_A = 77h
-0203 06A8                      		OPCODE_STAX_D  = 12h
-0204 06A8                      		OPCODE_LDAX_D  = 1Ah
-0206 06A8                      		copyImageFromScreen:
-0208 06A8 21 7E 12             		    lxi  h, OPCODE_MOV_A_M + (256 * OPCODE_STAX_D)
-0209 06AB                      		copyImageTo:
-0210 06AB 22 CE 06             		    shld copyImage_o1
-0211 06AE 22 D3 06             		    shld copyImage_o2
-0212 06B1 C9                   		    ret
-0216 06B2                      		copyImageToScreen:
-0217 06B2 21 1A 77             		    lxi  h, OPCODE_LDAX_D + (256 * OPCODE_MOV_M_A)
-0218 06B5 C3 AB 06             		    jmp  copyImageTo
-0223 06B8                      		copyNewFigureBackground:
-0224 06B8 01 30 07             		    lxi  b, 7 * 256 + 48
-0225 06BB 11 00 C0             		    lxi  d, NEW_BACKUP_FROM
-0226 06BE 21 C8 F8             		    lxi  h, 0F8F8h - 48
-0231 06C1                      		copyImage:
-0233 06C1 7C                   		    mov  a, h
-0234 06C2 32 CD 06             		    sta  copyImage_h1
-0235 06C5 D6 40                		    sui  040h
-0236 06C7 32 D2 06             		    sta  copyImage_h2
-0237 06CA E5                   		    push h
-0238 06CB C5                   		    push b
-0240 06CC                      		copyImage_4:
-0242 06CC                      		copyImage_h1 = $+1
-0243 06CC 26 D0                		    mvi  h, 0D0h
-0244 06CE                      		copyImage_o1:
-0245 06CE 7E                   		    mov  a, m
-0246 06CF 12                   		    stax d
-0247 06D0 13                   		    inx  d
-0249 06D1                      		copyImage_h2 = $+1
-0250 06D1 26 90                		    mvi  h, 90h
-0251 06D3                      		copyImage_o2:
-0252 06D3 7E                   		    mov  a, m
-0253 06D4 12                   		    stax d
-0254 06D5 13                   		    inx  d
-0256 06D6 2C                   		    inr  l
-0258 06D7 0D                   		    dcr  c
-0259 06D8 C2 CC 06             		    jnz  copyImage_4
-0260 06DB C1                   		    pop  b
-0261 06DC E1                   		    pop  h
-0263 06DD 24                   		    inr  h
-0265 06DE 05                   		    dcr  b
-0266 06DF C2 C1 06             		    jnz  copyImage
-0267 06E2 C9                   		    ret
-0272 06E3                      		redrawNewFigure1:
-0273 06E3 E5                   		    push h
-0274 06E4 D5                   		    push d
-0275 06E5 C5                   		    push b
-0278 06E6 7B                   		    mov  a, e
-0279 06E7 87                   		    add  a
-0280 06E8 87                   		    add  a
-0281 06E9 5F                   		    mov  e, a
-0282 06EA 87                   		    add  a
-0283 06EB 83                   		    add  e
-0284 06EC 5F                   		    mov  e, a
-0285 06ED 3E F7                		    mvi  a, 0F7h
-0286 06EF 93                   		    sub  e
-0287 06F0 4F                   		    mov  c, a
-0290 06F1 7A                   		    mov  a, d
-0291 06F2 C6 0A                		    adi  10
-0292 06F4 47                   		    mov  b, a
-0295 06F5                      		redrawNewFigure1_1 = $+1
-0296 06F5 3E 00                		    mvi  a, 0
-0297 06F7 CD 37 07             		    call drawCell
-0299 06FA C1                   		    pop  b
-0300 06FB D1                   		    pop  d
-0301 06FC E1                   		    pop  h
-0304 06FD AF                   		    xra  a
-0305 06FE C9                   		    ret
-0304 06FF                      		.include "playfieldgraph.inc"
-0001 06FF                      		map2 = 3h ; Тут будет массив размером WIDTH * HEIGHT = 10 * 20 = 200 байт
-0003 06FF                      		PLAYFIELD_Y = 8
-0011 06FF                      		cellOff:
-0012 06FF F0 3F FF             		    db 240- 0,03Fh,0FFh,000h ; 00111111,11111111,00000000
-0013 0703 EE FF FC             		    db 240- 2,0FFh,0FCh,000h ; 11111111,11111100,00000000
-0014 0707 ED 03 FF             		    db 240- 3,003h,0FFh,0F0h ; 00000011,11111111,11110000
-0015 070B EB 0F FF             		    db 240- 5,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
-0016 070F E9 3F FF             		    db 240- 7,03Fh,0FFh,000h ; 00111111,11111111,00000000
-0017 0713 E7 FF FC             		    db 240- 9,0FFh,0FCh,000h ; 11111111,11111100,00000000
-0018 0717 E6 03 FF             		    db 240-10,003h,0FFh,0F0h ; 00000011,11111111,11110000
-0019 071B E4 0F FF             		    db 240-12,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
-0020 071F E2 3F FF             		    db 240-14,03Fh,0FFh,000h ; 00111111,11111111,00000000
-0021 0723 E0 FF FC             		    db 240-16,0FFh,0FCh,000h ; 11111111,11111100,00000000
-0023 0727 FE FF FC             		    db 254- 0,0FFh,0FCh,000h ; 11111111,11111100,00000000
-0024 072B FD 03 FF             		    db 254- 1,003h,0FFh,0F0h ; 00000011,11111111,11110000
-0025 072F FB 0F FF             		    db 254- 3,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
-0026 0733 F9 3F FF             		    db 254- 5,03Fh,0FFh,000h ; 00111111,11111111,00000000
-0028 0737                      		OPCODE_ORI = 0F6h
-0029 0737                      		OPCODE_ANI = 0E6h
-0031 0737                      		drawCell:
-0033 0737 0F                   		    rrc
-0034 0738 21 F6 00             		    lxi  h, OPCODE_ORI + (OPCODE_NOP * 256)
-0035 073B 11 E6 2F             		    lxi  d, OPCODE_ANI + (OPCODE_CMA * 256)
-0036 073E DA 43 07             		    jc  drawCell_1
-0037 0741 EB                   		    xchg
-0038 0742 2F                   		    cma
-0039 0743                      		drawCell_1:
-0040 0743 F5                   		    push psw
-0041 0744 7C                   		    mov  a, h
-0042 0745 32 6A 07             		    sta  drawColumn_cma1
-0043 0748 22 7B 07             		    shld drawColumn_op1
-0044 074B F1                   		    pop psw
-0047 074C 0F                   		    rrc
-0048 074D DA 51 07             		    jc  drawCell_2
-0049 0750 EB                   		    xchg
-0050 0751                      		drawCell_2:
-0051 0751 7C                   		    mov  a, h
-0052 0752 32 6F 07             		    sta  drawColumn_cma2
-0053 0755 22 80 07             		    shld drawColumn_op2
-0058 0758 21 FF 06             		    lxi  h, cellOff
-0059 075B 58                   		    mov  e, b
-0060 075C 16 00                		    mvi  d, 0
-0061 075E 19                   		    dad  d
-0062 075F 19                   		    dad  d
-0063 0760 19                   		    dad  d
-0064 0761 19                   		    dad  d
-0065 0762 56                   		    mov  d, m
-0066 0763 59                   		    mov  e, c
-0069 0764 06 03                		    mvi  b, 3
-0070 0766                      		drawColumn_6:
-0073 0766 23                   		    inx  h
-0075 0767 E5                   		    push h
-0076 0768 D5                   		    push d
-0079 0769 7E                   		    mov  a, m
-0080 076A                      		drawColumn_cma1:
-0081 076A 2F                   		    cma
-0082 076B 32 7C 07             		    sta drawColumn_op1 + 1
-0085 076E 7E                   		    mov  a, m
-0086 076F                      		drawColumn_cma2:
-0087 076F 2F                   		    cma
-0088 0770 32 81 07             		    sta drawColumn_op2 + 1
-0091 0773 7A                   		    mov  a, d
-0092 0774 D6 40                		    sui  40h
-0093 0776 67                   		    mov  h, a
-0094 0777 6B                   		    mov  l, e
-0097 0778 0E 0C                		    mvi  c, 12
-0098 077A                      		drawColumn_2:
-0101 077A 1A                   		    ldax d
-0102 077B                      		drawColumn_op1 = $
-0103 077B E6 55                		    ani  55h
-0104 077D 12                   		    stax d
-0105 077E 1D                   		    dcr  e
-0108 077F 7E                   		    mov  a, m
-0109 0780                      		drawColumn_op2 = $
-0110 0780 E6 55                		    ani  55h
-0111 0782 77                   		    mov  m, a
-0112 0783 2D                   		    dcr  l
-0115 0784 0D                   		    dcr  c
-0116 0785 C2 7A 07             		    jnz  drawColumn_2
-0118 0788 D1                   		    pop  d
-0119 0789 E1                   		    pop  h
-0122 078A 15                   		    dcr  d
-0125 078B 05                   		    dcr  b
-0126 078C C2 66 07             		    jnz  drawColumn_6
-0128 078F C9                   		    ret
-0133 0790                      		redrawMap:
-0135 0790 11 F2 01             		    lxi d, map + START ;b
-0136 0793 21 03 00             		    lxi h, map2
-0139 0796 0E F7                		    mvi c, 0FFh - PLAYFIELD_Y ;e
-0140 0798                      		redrawMap_1:
-0143 0798 06 00                		    mvi b, 0 ; d
-0144 079A                      		redrawMap_2:
-0149 079A 1A                   		    ldax d ; b
-0150 079B BE                   		    cmp  m
-0151 079C C4 B3 07             		    cnz  redrawMap_4
-0153 079F 04                   		    inr  b ; d
-0154 07A0 13                   		    inx  d ; b
-0155 07A1 23                   		    inx  h
-0156 07A2 78                   		    mov  a, b ; d
-0157 07A3 FE 0A                		    cpi  WIDTH
-0158 07A5 C2 9A 07             		    jnz  redrawMap_2
-0160 07A8 13                   		    inx  d ; b
-0161 07A9 79                   		    mov  a, c ; e
-0162 07AA D6 0C                		    sui  12
-0163 07AC 4F                   		    mov  c, a ; e
-0164 07AD FE 07                		    cpi  0FFh - PLAYFIELD_Y - (HEIGHT * 12)
-0165 07AF C2 98 07             		    jnz  redrawMap_1
-0166 07B2 C9                   		    ret
-0170 07B3                      		redrawMap_4:
-0171 07B3 77                   		    mov  m, a
-0172 07B4 C5                   		    push b
-0173 07B5 D5                   		    push d
-0174 07B6 E5                   		    push h
-0175 07B7 CD 37 07             		    call drawCell
-0176 07BA E1                   		    pop  h
-0177 07BB D1                   		    pop  d
-0178 07BC C1                   		    pop  b
-0179 07BD C9                   		    ret
-0184 07BE                      		invalidatePlayfield:
-0185 07BE 21 03 00             		    lxi  h, map2
-0186 07C1 3E FF                		    mvi  a, 0FFh
-0187 07C3 0E C8                		    mvi  c, (WIDTH * HEIGHT)
-0188 07C5 C3 98 01             		    jmp  memset8
-0305 07C8                      		.include "rand.inc"
-0001 07C8                      		rand:
-0002 07C8                      		rand_seed = $+1
-0003 07C8 3E 0D                		    mvi  a, 13
-0004 07CA 5F                   		    mov  e, a
-0005 07CB 87                   		    add  a
-0006 07CC 87                   		    add  a
-0007 07CD 83                   		    add  e
-0008 07CE 3C                   		    inr  a
-0009 07CF 32 C9 07             		    sta  rand_seed
-0010 07D2 C9                   		    ret
-0306 07D3                      		.include "unmlz.inc"
-0003 07D3                      		unmlz:		;push	b
-0004 07D3 3E 80                				mvi	a, 80h
-0005 07D5                      		UNLD:
-0006 07D5 32 E9 07             				sta	unmlz_1
-0007 07D8 1A                   				ldax	d
-0008 07D9 13                   				inx	d
-0009 07DA C3 E6 07             				jmp	UNSTA
-0011 07DD 7E                   		UNST3:		mov	a, m
-0012 07DE 23                   				inx	h
-0013 07DF 02                   				stax	b
-0014 07E0 03                   				inx	b
-0016 07E1 7E                   		UNST2:		mov	a, m
-0017 07E2 23                   				inx	h
-0018 07E3 02                   				stax	b
-0019 07E4 03                   				inx	b
-0021 07E5 7E                   		UNST1:		mov	a, m
-0023 07E6 02                   		UNSTA:		stax	b
-0024 07E7 03                   				inx	b
-0026 07E8                      		unmlz_1 = $+1
-0027 07E8 3E 00                		ULOOP:		mvi     a, 0
-0028 07EA 87                   				add	a
-0029 07EB C2 F1 07             				jnz	L1
-0030 07EE 1A                   				ldax	d
-0031 07EF 13                   				inx	d
-0032 07F0 17                   				ral
-0034 07F1 DA D5 07             		L1:		jc	UNLD
-0035 07F4 87                   				add	a
-0036 07F5 C2 FB 07             				jnz	L3
-0037 07F8 1A                   				ldax	d
-0038 07F9 13                   				inx	d
-0039 07FA 17                   				ral
-0041 07FB DA 21 08             		L3:		jc	UN2
-0042 07FE 87                   				add	a
-0043 07FF C2 05 08             				jnz	L2
-0044 0802 1A                   				ldax	d
-0045 0803 13                   				inx	d
-0046 0804 17                   				ral
-0048 0805 DA 15 08             		L2:		jc	UN1
-0049 0808 21 FF 3F             				lxi	h, 3FFFh
-0050 080B CD 6C 08             				call	GETBITS
-0051 080E 32 E9 07             				sta	unmlz_1
-0052 0811 09                   				dad	b
-0053 0812 C3 E5 07             				jmp	UNST1
-0057 0815 32 E9 07             		UN1:		sta	unmlz_1
-0058 0818 1A                   				ldax	d
-0059 0819 13                   				inx	d
-0060 081A 6F                   				mov	l, a
-0061 081B 26 FF                				mvi	h, 0FFh
-0062 081D 09                   				dad	b
-0063 081E C3 E1 07             				jmp	UNST2
-0067 0821 87                   		UN2:		add	a
-0068 0822 C2 28 08             				jnz	L4
-0069 0825 1A                   				ldax	d
-0070 0826 13                   				inx	d
-0071 0827 17                   				ral
-0073 0828 DA 32 08             		L4:		jc	UN3
-0074 082B CD 81 08             				call	GETBIGD
-0075 082E 09                   				dad	b
-0076 082F C3 DD 07             				jmp	UNST3
-0080 0832 26 00                		UN3:		mvi	h, 0
-0082 0834 24                   		UN3A:		inr	h
-0083 0835 87                   				add	a
-0084 0836 C2 3C 08             				jnz	L5
-0085 0839 1A                   				ldax	d
-0086 083A 13                   				inx	d
-0087 083B 17                   				ral
-0089 083C D2 34 08             		L5:		jnc	UN3A
-0090 083F F5                   				push	psw
-0091 0840 7C                   				mov	a, h
-0092 0841 FE 08                				cpi	8
-0093 0843 D2 6A 08             				jnc	UNEXIT
-0094 0846 3E 00                				mvi	a, 0
-0096 0848 1F                   		L5B:		rar
-0097 0849 25                   				dcr	h
-0098 084A C2 48 08             				jnz	L5B
-0099 084D 67                   				mov	h, a
-0100 084E 2E 01                				mvi	l, 1
-0101 0850 F1                   				pop	psw
-0102 0851 CD 6C 08             				call	GETBITS
-0103 0854 23                   				inx	h
-0104 0855 23                   				inx	h
-0105 0856 E5                   				push	h
-0106 0857 CD 81 08             				call	GETBIGD
-0107 085A EB                   				xchg
-0108 085B E3                   				xthl
-0109 085C EB                   				xchg
-0110 085D 09                   				dad	b
-0112 085E 7E                   		LDIR:		mov	a, m
-0113 085F 23                   				inx	h
-0114 0860 02                   				stax	b
-0115 0861 03                   				inx	b
-0116 0862 1D                   				dcr	e
-0117 0863 C2 5E 08             				jnz	LDIR
-0118 0866 D1                   				pop	d
-0119 0867 C3 E8 07             				jmp	ULOOP
-0123 086A F1                   		UNEXIT:		pop	psw
-0125 086B C9                   				ret
-0129 086C 87                   		GETBITS:	add	a
-0130 086D C2 73 08             				jnz	L7
-0131 0870 1A                   				ldax	d
-0132 0871 13                   				inx	d
-0133 0872 17                   				ral		
-0134 0873 DA 7B 08             		L7:		jc	GETB1
-0135 0876 29                   				dad	h
-0136 0877 D8                   				rc
-0137 0878 C3 6C 08             				jmp	GETBITS
-0141 087B 29                   		GETB1:		dad	h
-0142 087C 2C                   				inr	l
-0143 087D D8                   				rc
-0144 087E C3 6C 08             				jmp	GETBITS
-0148 0881 87                   		GETBIGD:	add	a
-0149 0882 C2 88 08             				jnz	L8
-0150 0885 1A                   				ldax	d
-0151 0886 13                   				inx	d
-0152 0887 17                   				ral
-0154 0888 DA 94 08             		L8:		jc	GETBD1
-0155 088B 32 E9 07             				sta	unmlz_1
-0156 088E 1A                   				ldax	d
-0157 088F 13                   				inx	d
-0158 0890 6F                   				mov	l, a
-0159 0891 26 FF                				mvi	h, 0FFh
-0160 0893 C9                   				ret
-0164 0894 21 FF 1F             		GETBD1:		lxi	h, 1FFFh
-0165 0897 CD 6C 08             				call	GETBITS
-0166 089A 32 E9 07             				sta	unmlz_1
-0167 089D 65                   				mov	h, l
-0168 089E 25                   				dcr	h
-0169 089F 1A                   				ldax	d
-0170 08A0 13                   				inx	d
-0171 08A1 6F                   				mov	l, a
-0172 08A2 C9                   				ret
-0310 08A3                      		LEVELS_COUNT = 6
-0312 08A3 C1 08                		levels dw level1
-0313 08A5 00 03 04             		       db 0,3,4
-0314 08A8 32 16                		       dw level2
-0315 08AA 00 02 04             		       db 0,2,4
-0316 08AD DB 27                		       dw level3
-0317 08AF 00 03 05             		       db 0,3,5
-0318 08B2 E9 42                		       dw level4
-0319 08B4 00 03 04             		       db 0,3,4
-0320 08B7 2F 5C                		       dw level5
-0321 08B9 00 03 04             		       db 0,3,4
-0322 08BC CF 6F                		       dw level6
-0323 08BE 03 03 04             		       db 3,3,4
-0325 08C1                      		level1:
-0326 08C1                      		.include "graph/level1.inc"
+0025 0000                      		.include "opcodes.inc"
+0003 0000                      		OPCODE_NOP     = 000h
+0004 0000                      		OPCODE_STAX_D  = 012h
+0005 0000                      		OPCODE_LDAX_D  = 01Ah
+0006 0000                      		OPCODE_CMA     = 02Fh
+0007 0000                      		OPCODE_MVI_M   = 036h
+0008 0000                      		OPCODE_MOV_A_M = 07Eh
+0009 0000                      		OPCODE_MOV_M_A = 077h
+0010 0000                      		OPCODE_ANA_B   = 0A0h
+0011 0000                      		OPCODE_ANA_M   = 0A6h
+0012 0000                      		OPCODE_XRA_A   = 0AFh
+0013 0000                      		OPCODE_ORA_B   = 0B0h
+0014 0000                      		OPCODE_ORA_M   = 0B6h
+0015 0000                      		OPCODE_RET     = 0C9h
+0016 0000                      		OPCODE_ANI     = 0E6h
+0017 0000                      		OPCODE_XCHG    = 0EBh
+0018 0000                      		OPCODE_ORI     = 0F6h
+0047 0000                      		org 234
+0048 00EA                      		fileStart:
+0049 00EA 4C 56 4F             		.db 4ch, 56h, 4fh, 56h, 2fh, 32h, 2eh, 30h, 2fh, 0d0h, "TETRIS"
+0050 00FA 00 01                		.dw entry
+0051 00FC 53 96                		.dw end1
+0052 00FE 00 01                		.dw entry
+0056 0100                      		entry:
+0058 0100 31 00 01             		    lxi sp, 100h
+0061 0103 CD 9E 84             		    call intro
+0064 0106 AF                   		    xra  a
+0065 0107 32 47 06             		    sta  palette
+0068 010A                      		restartGame:
+0069 010A CD 4F 05             		    call tetris
+0072 010D 21 36 00             		    lxi  h, OPCODE_MVI_M
+0073 0110 CD AB 06             		    call copyImageTo
+0074 0113 21 78 DF             		    lxi  h, 0FFFFh - 135 - (32 * 256)
+0075 0116 01 1E 12             		    lxi  b, 18 * 256 + 30 ; width * 256 + height
+0076 0119 11 00 00             		    lxi  d, 0
+0077 011C CD C1 06             		    call copyImage
+0080 011F 3E 02                		    mvi  a, 2
+0081 0121 CD 07 02             		    call setTextColor
+0082 0124 21 38 01             		    lxi  h, gameOverText
+0083 0127 CD AB 01             		    call drawText
+0086 012A                      		entry_1:
+0087 012A CD C8 07             		    call rand
+0088 012D CD 12 FC             		    call inkey_FC12
+0089 0130 FE 0D                		    cpi  13
+0090 0132 C2 2A 01             		    jnz  entry_1
+0093 0135 C3 0A 01             		    jmp  restartGame
+0097 0138                      		gameOverText:
+0098 0138 09 14 47             		    db 9,20,"GAME OVER",0
+0102 0144                      		pressAnyKey:
+0104 0144                      		pressAnyKey_1:
+0105 0144 CD 12 FC             		    call inkey_FC12
+0106 0147 FE FF                		    cpi  0FFh
+0107 0149 C2 44 01             		    jnz  pressAnyKey_1
+0108 014C                      		pressAnyKey_2:
+0109 014C CD C8 07             		    call rand
+0110 014F CD 12 FC             		    call inkey_FC12
+0111 0152 FE FF                		    cpi  0FFh
+0112 0154 CA 4C 01             		    jz   pressAnyKey_2
+0113 0157 C9                   		    ret
+0117 0158                      		.include "fn.inc"
+0005 0158                      		memcpy8back:
+0006 0158 1A                   		    ldax d
+0007 0159 77                   		    mov m, a
+0008 015A 1B                   		    dcx d
+0009 015B 2B                   		    dcx h
+0010 015C 0B                   		    dcx b
+0011 015D 79                   		    mov a, c
+0012 015E B0                   		    ora b
+0013 015F C2 58 01             		    jnz memcpy8back
+0014 0162 C9                   		    ret
+0018 0163                      		memcpy8:
+0019 0163 7E                   		    mov  a, m
+0020 0164 12                   		    stax d
+0021 0165 13                   		    inx  d
+0022 0166 23                   		    inx  h
+0023 0167 0D                   		    dcr  c
+0024 0168 C2 63 01             		    jnz  memcpy8
+0025 016B C9                   		    ret
+0029 016C                      		memset8:
+0030 016C 77                   		    mov  m, a
+0031 016D 23                   		    inx  h
+0032 016E 0D                   		    dcr  c
+0033 016F C2 6C 01             		    jnz  memset8
+0034 0172 C9                   		    ret
+0038 0173                      		delay8000:
+0039 0173 11 00 80             		    lxi  d, 08000h
+0040 0176                      		delay:
+0041 0176 1B                   		    dcx  d
+0042 0177 7A                   		    mov  a, d
+0043 0178 B3                   		    ora  e
+0044 0179 C2 76 01             		    jnz  delay
+0045 017C C9                   		    ret
+0050 017D                      		div16:
+0051 017D 7C                   		    MOV  A,H
+0052 017E B5                   		    ORA  L
+0053 017F C8                   		    RZ
+0054 0180 01 00 00             		    LXI  B,0000
+0055 0183 C5                   		    PUSH B
+0056 0184                      		div16_1:
+0057 0184 7B                   		    MOV  A,E
+0058 0185 95                   		    SUB  L
+0059 0186 7A                   		    MOV  A,D
+0060 0187 9C                   		    SBB  H
+0061 0188 DA 90 01             		    JC   div16_2
+0062 018B E5                   		    PUSH H
+0063 018C 29                   		    DAD  H
+0064 018D D2 84 01             		    JNC  div16_1
+0065 0190                      		div16_2:
+0066 0190 21 00 00             		    LXI  H,0000
+0067 0193                      		div16_3:
+0068 0193 C1                   		    POP  B
+0069 0194 78                   		    MOV  A, B
+0070 0195 B1                   		    ORA  C
+0071 0196 C8                   		    RZ
+0072 0197 29                   		    DAD  H
+0073 0198 D5                   		    PUSH D
+0074 0199 7B                   		    MOV  A, E
+0075 019A 91                   		    SUB  C
+0076 019B 5F                   		    MOV  E, A
+0077 019C 7A                   		    MOV  A, D
+0078 019D 98                   		    SBB  B
+0079 019E 57                   		    MOV  D, A
+0080 019F DA A7 01             		    JC   div16_4
+0081 01A2 23                   		    INX  H
+0082 01A3 C1                   		    POP  B
+0083 01A4 C3 93 01             		    JMP  div16_3
+0084 01A7                      		div16_4:
+0085 01A7 D1                   		    POP  D
+0086 01A8 C3 93 01             		    JMP  div16_3
+0118 01AB                      		.include "text.inc"
+0003 01AB                      		FONT_HEIGHT      = 12
+0004 01AB                      		FONT_LINE_HEIGHT = 14
+0008 01AB                      		drawText:
+0009 01AB CD B2 01             		    call drawText2
+0010 01AE C2 AB 01             		    jnz  drawText
+0011 01B1 C9                   		    ret
+0013 01B2                      		drawText2:
+0014 01B2 7E                   		    mov  a, m
+0015 01B3 B7                   		    ora  a
+0016 01B4 C8                   		    rz
+0017 01B5 23                   		    inx  h
+0018 01B6 FE 20                		    cpi  32
+0019 01B8 D2 CE 01             		    jnc  drawText_1
+0020 01BB 5F                   		    mov  e, a
+0021 01BC 87                   		    add  a ; *2
+0022 01BD 83                   		    add  e ; *3
+0023 01BE 87                   		    add  a ; *6
+0024 01BF 83                   		    add  e ; *7
+0025 01C0 87                   		    add  a ; *14
+0026 01C1 2F                   		    cma
+0027 01C2 32 E6 01             		    sta  drawCharAddr
+0028 01C5 3E FF                		    mvi  a, 0FFh
+0029 01C7 96                   		    sub  m
+0030 01C8 23                   		    inx  h
+0031 01C9 32 E7 01             		    sta  drawCharAddr+1
+0032 01CC 7E                   		    mov  a, m
+0033 01CD 23                   		    inx  h
+0034 01CE                      		drawText_1:
+0035 01CE E5                   		    push h
+0036 01CF CD D7 01             		    call drawChar
+0037 01D2 35                   		    dcr  m
+0038 01D3 E1                   		    pop  h
+0039 01D4 AF                   		    xra  a ; return nz
+0040 01D5 3C                   		    inr  a
+0041 01D6 C9                   		    ret
+0045 01D7                      		drawChar:
+0048 01D7 6F                   		    mov  l, a
+0049 01D8 26 00                		    mvi  h, 0
+0050 01DA 29                   		    dad  h ; *2
+0051 01DB 29                   		    dad  h ; *4
+0052 01DC 54                   		    mov  d, h
+0053 01DD 5D                   		    mov  e, l
+0054 01DE 29                   		    dad  h ; *8
+0055 01DF 19                   		    dad  d ; *12
+0056 01E0 11 5A 80             		    lxi  d, font - (' ' * 12)
+0057 01E3 19                   		    dad  d
+0058 01E4 EB                   		    xchg
+0061 01E5                      		drawCharAddr = $+1
+0062 01E5 21 00 D0             		    lxi  h, 0D000h
+0065 01E8 0E 0C                		    mvi  c, FONT_HEIGHT
+0066 01EA                      		drawChar_1:
+0067 01EA C5                   		    push b
+0070 01EB 46                   		    mov  b, m
+0071 01EC 1A                   		    ldax d
+0072 01ED                      		drawChar_cma1:
+0073 01ED 2F                   		    cma    ; nop
+0074 01EE A0                   		    ana  b ; ora b
+0075 01EF 4F                   		    mov  c, a
+0078 01F0 E5                   		    push h
+0079 01F1 7C                   		    mov  a, h
+0080 01F2 DE 40                		    sbi  40h
+0081 01F4 67                   		    mov  h, a
+0084 01F5 46                   		    mov  b, m
+0085 01F6 1A                   		    ldax d
+0086 01F7                      		drawChar_cma2:
+0087 01F7 2F                   		    cma    ; nop
+0088 01F8 A0                   		    ana  b ; ora b
+0091 01F9 77                   		    mov  m, a
+0092 01FA E1                   		    pop  h
+0093 01FB 71                   		    mov  m, c
+0096 01FC 23                   		    inx  h
+0097 01FD 13                   		    inx  d
+0100 01FE C1                   		    pop  b
+0101 01FF 0D                   		    dcr  c
+0102 0200 C2 EA 01             		    jnz  drawChar_1
+0105 0203 21 E7 01             		    lxi h, drawCharAddr+1
+0106 0206 C9                   		    ret
+0110 0207                      		setTextColor:
+0111 0207 21 2F A0             		    lxi  h, OPCODE_CMA + (OPCODE_ANA_B * 256)
+0112 020A 11 00 B0             		    lxi  d, OPCODE_NOP + (OPCODE_ORA_B * 256)
+0113 020D                      		setTextColor1:
+0114 020D 0F                   		    rrc
+0115 020E D2 13 02             		    jnc  setTextColor_1
+0116 0211 EB                   		    xchg
+0117 0212 2F                   		    cma
+0118 0213                      		setTextColor_1:
+0119 0213 22 ED 01             		    shld drawChar_cma1
+0120 0216 0F                   		    rrc
+0121 0217 D2 1B 02             		    jnc  setTextColor_2
+0122 021A EB                   		    xchg
+0123 021B                      		setTextColor_2:
+0124 021B 22 F7 01             		    shld drawChar_cma2
+0125 021E C9                   		    ret
+0119 021F                      		.include "tetris.inc"
+0003 021F 00 00 00             		map  db 232 dup(0)
+0006 0307                      		WIDTH     = 10
+0007 0307                      		HEIGHT    = 20
+0008 0307                      		BPL       = WIDTH+1
+0009 0307                      		START     = 1
+0010 0307                      		MAP_SIZE  = (START + (BPL * (HEIGHT + 1)))
+0014 0307 C8 6E 3C             		speeds         db 200,110,60,40,30,15 ; Скорости для каждого уровня
+0015 030D 00                   		timer          db 0
+0016 030E 00                   		lastPressedKey db 0
+0017 030F 00                   		figureA        db 0
+0018 0310 00                   		figureO        db 0 ;  O+С должны быть подряд
+0019 0311 00                   		figureC        db 0
+0020 0312 00                   		nextO          db 0 ;  O+С должны быть подряд
+0021 0313 00                   		nextC          db 0
+0022 0314 00 00                		score          dw 0
+0023 0316 00 00                		bestScore      dw 0
+0024 0318 00                   		level          db 0
+0025 0319 00                   		gameOverFlag   db 0
+0030 031A                      		redrawAll:
+0031 031A CD D4 05             		    call drawBackgrond
+0032 031D CD BE 07             		    call invalidatePlayfield
+0033 0320 CD 8F 06             		    call redrawNewFigure
+0034 0323 CD 90 07             		    call redrawMap
+0035 0326 CD 5E 06             		    call redrawScore
+0036 0329 CD 3C 06             		    call paletteShow
+0037 032C C9                   		    ret
+0041 032D                      		checkFigure:
+0043 032D 7E                   		    mov a, m
+0044 032E B7                   		    ora a
+0045 032F C9                   		    ret
+0052 0330                      		drawFigure:
+0053 0330 3A 11 03             		    lda  figureC
+0054 0333 77                   		    mov  m, a
+0055 0334 AF                   		    xra  a ; return z
+0056 0335 C9                   		    ret
+0060 0336                      		clearFigure:
+0061 0336 36 00                		    mvi m, 0
+0062 0338 AF                   		    xra a ; return z
+0063 0339 C9                   		    ret
+0073 033A                      		decodeFigure2:
+0074 033A 6F                   		    mov  l, a
+0075 033B E6 03                		    ani  3
+0076 033D 57                   		    mov  d, a ; d - это X
+0077 033E 7D                   		    mov  a, l
+0078 033F 0F                   		    rrc
+0079 0340 0F                   		    rrc
+0080 0341 E6 03                		    ani  3
+0081 0343 5F                   		    mov  e, a ; e - это Y
+0082 0344 87                   		    add  a ; *2
+0083 0345 87                   		    add  a ; *4
+0084 0346 83                   		    add  e ; *5
+0085 0347 87                   		    add  a ; *10
+0086 0348 83                   		    add  e ; *11
+0087 0349 82                   		    add  d
+0088 034A 47                   		    mov  b, a
+0089 034B 3A 0F 03             		    lda  figureA
+0090 034E 80                   		    add  b
+0091 034F 26 00                		    mvi  h, 0
+0092 0351 6F                   		    mov  l, a
+0093 0352 01 20 02             		    lxi  b, map + START
+0094 0355 09                   		    dad  b
+0097 0356                      		decodeFigure3 = $+1
+0098 0356 C3 00 00             		    jmp 0
+0103 0359                      		decodeFigure1:
+0104 0359 6F                   		    mov  l, a
+0105 035A E5                   		    push h
+0106 035B CD 3A 03             		    call decodeFigure2
+0107 035E E1                   		    pop  h
+0108 035F C0                   		    rnz
+0109 0360 7D                   		    mov  a, l
+0110 0361 0F                   		    rrc
+0111 0362 0F                   		    rrc
+0112 0363 0F                   		    rrc
+0113 0364 0F                   		    rrc
+0114 0365 C3 3A 03             		    jmp  decodeFigure2
+0119 0368                      		figures:
+0120 0368 51 84 10             		    db 81,132,16,101,81,132,16,101,64,149,84,33,64,149,84,33,81,217,84,118
+0121 037C 51 D9 54             		    db 81,217,84,118,16,84,16,84,16,84,16,84,65,101,64,88,16,82,81,73,64
+0122 0391 98 10 42             		    db 152,16,66,16,149,84,38,81,137,64,101,16,132,16,98
+0124 03A0                      		decodeFigure:
+0125 03A0 3A 10 03             		    lda  figureO
+0127 03A3                      		decodeFigureEx:
+0128 03A3 22 57 03             		    shld decodeFigure3
+0131 03A6 6F                   		    mov  l, a
+0132 03A7 26 00                		    mvi  h, 0
+0133 03A9 11 68 03             		    lxi  d, figures
+0134 03AC 19                   		    dad  d
+0135 03AD 7E                   		    mov  a, m
+0136 03AE E5                   		    push h
+0137 03AF CD 59 03             		    call decodeFigure1
+0138 03B2 E1                   		    pop  h
+0139 03B3 C0                   		    rnz
+0142 03B4 23                   		    inx  h
+0143 03B5 7E                   		    mov  a, m
+0144 03B6 C3 59 03             		    jmp  decodeFigure1
+0148 03B9                      		gen:
+0150 03B9 CD C8 07             		    call rand
+0151 03BC                      		gen_2:
+0152 03BC DE 07                		    sbi  7
+0153 03BE D2 BC 03             		    jnc  gen_2
+0154 03C1 C6 07                		    adi  7
+0156 03C3 87                   		    add  a
+0157 03C4 87                   		    add  a
+0158 03C5 87                   		    add  a
+0159 03C6 32 12 03             		    sta  nextO
+0162 03C9 CD C8 07             		    call rand
+0163 03CC                      		gen_3:
+0164 03CC DE 03                		    sbi  3
+0165 03CE D2 CC 03             		    jnc  gen_3
+0166 03D1 C6 03                		    adi  3
+0167 03D3 3C                   		    inr  a
+0168 03D4 32 13 03             		    sta  nextC
+0169 03D7 C9                   		    ret
+0173 03D8                      		newFigureEx:
+0175 03D8 2A 12 03             		    lhld nextO
+0176 03DB 22 10 03             		    shld figureO
+0179 03DE 3E 04                		    mvi  a, 4
+0180 03E0 32 0F 03             		    sta  figureA
+0183 03E3 21 2D 03             		    lxi  h, checkFigure
+0184 03E6 CD A0 03             		    call decodeFigure
+0185 03E9 CA F1 03             		    jz   newFigure_1
+0186 03EC 3E 01                		    mvi  a, 1
+0187 03EE 32 19 03             		    sta  gameOverFlag
+0188 03F1                      		newFigure_1:
+0191 03F1 21 30 03             		    lxi  h, drawFigure
+0192 03F4 CD A0 03             		    call decodeFigure
+0195 03F7 C3 B9 03             		    jmp gen
+0199 03FA                      		newFigure:
+0200 03FA CD D8 03             		    call newFigureEx
+0203 03FD CD 8F 06             		    call redrawNewFigure
+0206 0400 C3 90 07             		    jmp  redrawMap
+0210 0403                      		move:
+0212 0403 C5                   		    push b
+0213 0404 21 36 03             		    lxi  h, clearFigure
+0214 0407 CD A0 03             		    call decodeFigure
+0215 040A C1                   		    pop  b
+0218 040B 3A 0F 03             		    lda figureA
+0219 040E F5                   		    push psw
+0220 040F 81                   		    add c
+0221 0410 32 0F 03             		    sta figureA
+0224 0413 3A 10 03             		    lda  figureO
+0225 0416 F5                   		    push psw
+0228 0417 05                   		    dcr b
+0229 0418 C2 28 04             		    jnz move_1
+0231 041B 47                   		    mov b, a
+0232 041C 3C                   		    inr a
+0233 041D 3C                   		    inr a
+0234 041E E6 06                		    ani 6
+0235 0420 4F                   		    mov c, a
+0236 0421 78                   		    mov a, b
+0237 0422 E6 F9                		    ani 0F9h
+0238 0424 81                   		    add c
+0239 0425 32 10 03             		    sta figureO
+0241 0428                      		move_1:
+0244 0428 21 2D 03             		    lxi  h, checkFigure
+0245 042B CD A0 03             		    call decodeFigure
+0246 042E CA 41 04             		    jz   move_2
+0250 0431 F1                   		    pop psw
+0251 0432 32 10 03             		    sta figureO
+0252 0435 F1                   		    pop psw
+0253 0436 32 0F 03             		    sta figureA
+0256 0439 21 30 03             		    lxi  h, drawFigure
+0257 043C CD A0 03             		    call decodeFigure
+0260 043F AF                   		    xra a
+0261 0440 C9                   		    ret
+0263 0441                      		move_2:
+0265 0441 F1                   		    pop psw
+0266 0442 F1                   		    pop psw
+0269 0443 21 30 03             		    lxi  h, drawFigure
+0270 0446 CD A0 03             		    call decodeFigure
+0273 0449 CD 90 07             		    call redrawMap
+0276 044C AF                   		    xra a
+0277 044D 3C                   		    inr a
+0278 044E C9                   		    ret
+0284 044F                      		deleteLine:
+0285 044F 3E 07                		    mvi  a, 7
+0286 0451                      		deleteLine_1:
+0287 0451 F5                   		    push psw
+0288 0452 E5                   		    push h
+0289 0453 0E 0A                		    mvi  c, WIDTH
+0290 0455 D3 B0                		    out  0B0h
+0291 0457 CD 6C 01             		    call memset8
+0292 045A CD 90 07             		    call redrawMap
+0293 045D E1                   		    pop  h
+0294 045E F1                   		    pop  psw
+0295 045F 3D                   		    dcr  a
+0296 0460 C2 51 04             		    jnz  deleteLine_1
+0300 0463 2B                   		    dcx  h
+0303 0464 54                   		    mov  d, h
+0304 0465 5D                   		    mov  e, l
+0305 0466 01 0B 00             		    lxi  b, BPL
+0306 0469 09                   		    dad  b
+0309 046A                      		deleteLine_1:
+0310 046A 1A                   		    ldax d
+0311 046B 1B                   		    dcx  d
+0312 046C 77                   		    mov  m, a
+0313 046D 2B                   		    dcx  h
+0316 046E 7B                   		    mov  a, e
+0317 046F D6 1F                		    sui  map
+0318 0471 7A                   		    mov  a, d
+0319 0472 DE 02                		    sbi  (map/256)
+0320 0474 D2 6A 04             		    jnc  deleteLine_1
+0323 0477 21 20 02             		    lxi  h, map + START
+0324 047A AF                   		    xra  a
+0325 047B 0E 0A                		    mvi  c, WIDTH
+0326 047D CD 6C 01             		    call memset8
+0330 0480 C3 90 07             		    jmp  redrawMap
+0335 0483                      		clearLine:
+0340 0483 06 0A                		    mvi  b, WIDTH
+0341 0485                      		clearLine_1:
+0342 0485 36 00                		    mvi  m, 0
+0343 0487 23                   		    inx  h
+0344 0488 05                   		    dcr  b
+0345 0489 C2 85 04             		    jnz  clearLine_1
+0346 048C C9                   		    ret
+0350 048D                      		newGame:
+0351 048D CD B9 03             		    call gen
+0352 0490 AF                   		    xra  a
+0353 0491 32 18 03             		    sta  level
+0354 0494 32 14 03             		    sta  score + 0
+0355 0497 32 15 03             		    sta  score + 1
+0356 049A 32 19 03             		    sta  gameOverFlag
+0361 049D 21 1F 02             		    lxi  h, map
+0362 04A0 0E 14                		    mvi  c, HEIGHT
+0363 04A2                      		newGame_1:
+0364 04A2 36 01                		    mvi  m, 1
+0365 04A4 23                   		    inx  h
+0366 04A5 CD 83 04             		    call clearLine
+0367 04A8 0D                   		    dcr  c
+0368 04A9 C2 A2 04             		    jnz  newGame_1
+0369 04AC 0E 0C                		    mvi  c, BPL + 1
+0370 04AE                      		newGame_1a:
+0371 04AE 36 01                		    mvi  m, 1
+0372 04B0 23                   		    inx  h
+0373 04B1 0D                   		    dcr  c
+0374 04B2 C2 AE 04             		    jnz  newGame_1a
+0377 04B5 CD D8 03             		    call  newFigureEx
+0379 04B8 CD 1A 03             		    call  redrawAll
+0381 04BB C9                   		    ret
+0385 04BC                      		checkLine:
+0389 04BC 0E 0A                		    mvi  c, WIDTH
+0390 04BE                      		checkLine_1:
+0391 04BE 7E                   		    mov  a, m
+0392 04BF B7                   		    ora  a
+0393 04C0 C8                   		    rz
+0394 04C1 23                   		    inx  h
+0395 04C2 0D                   		    dcr  c
+0396 04C3 C2 BE 04             		    jnz  checkLine_1
+0399 04C6 AF                   		    xra a
+0400 04C7 3C                   		    inr a
+0401 04C8 C9                   		    ret
+0417 04C9                      		checkLines:
+0418 04C9 3E C9                		    mvi  a, 0C9h
+0419 04CB 32 07 05             		    sta  checkLines_3
+0422 04CE 21 F1 02             		    lxi h, map + START + (BPL * (HEIGHT - 1))
+0423 04D1                      		checkLines_1:
+0427 04D1 E5                   		    push h
+0428 04D2 CD BC 04             		    call checkLine
+0429 04D5 E1                   		    pop  h
+0430 04D6 CA FA 04             		    jz checkLines_2
+0432 04D9 E5                   		    push h
+0433 04DA CD 4F 04             		    call deleteLine
+0435 04DD 2A 14 03             		    lhld score
+0436 04E0 23                   		    inx  h
+0437 04E1 22 14 03             		    shld score
+0439 04E4 EB                   		    xchg
+0440 04E5 2A 16 03             		    lhld bestScore
+0441 04E8 7D                   		    mov  a, l
+0442 04E9 93                   		    sub  e
+0443 04EA 7C                   		    mov  a, h
+0444 04EB                      		    sbc  d
+0445 04EB D2 F2 04             		    jnc checkLines_4
+0446 04EE EB                   		    xchg
+0447 04EF 22 16 03             		    shld bestScore
+0448 04F2                      		checkLines_4:
+0450 04F2 AF                   		    xra  a
+0451 04F3 32 07 05             		    sta  checkLines_3
+0452 04F6 E1                   		    pop  h
+0454 04F7 C3 D1 04             		    jmp checkLines_1
+0455 04FA                      		checkLines_2:
+0458 04FA 11 F5 FF             		    lxi d, 65536-BPL
+0459 04FD 19                   		    dad d
+0461 04FE 7D                   		    mov a, l
+0462 04FF D6 21                		    sui (map + START + 1)
+0463 0501 7C                   		    mov a, h
+0464 0502 DE 02                		    sbi (map + START + 1) / 256
+0465 0504 D2 D1 04             		    jnc checkLines_1
+0467 0507                      		checkLines_3:
+0468 0507 C9                   		    ret
+0470 0508 CD 5E 06             		    call redrawScore
+0472 050B 2A 14 03             		    lhld score
+0473 050E EB                   		    xchg
+0474 050F 21 1E 00             		    lxi  h, 30
+0475 0512 CD 7D 01             		    call div16
+0476 0515 7D                   		    mov  a, l
+0477 0516                      		setLevel1:
+0479 0516 2A 18 03             		    lhld level
+0480 0519 BD                   		    cmp  l
+0481 051A C8                   		    rz
+0482 051B D8                   		    rc
+0484 051C FE 06                		    cpi  LEVELS_COUNT
+0485 051E D0                   		    rnc
+0486 051F 32 18 03             		    sta  level
+0487 0522 C3 1A 03             		    jmp  redrawAll
+0491 0525                      		nextLevel:
+0492 0525 3A 18 03             		    lda  level
+0493 0528 3C                   		    inr  a
+0494 0529 CD 16 05             		    call setLevel1
+0495 052C C3 52 05             		    jmp  gameLoop
+0499 052F                      		tick:
+0501 052F 01 0B 00             		    lxi  b, BPL
+0502 0532 CD 03 04             		    call move
+0504 0535 C0                   		    rnz
+0507 0536 CD C9 04             		    call checkLines
+0510 0539 CD FA 03             		    call newFigure
+0513 053C C9                   		    ret
+0516 053D                      		down:
+0518 053D 01 0B 00             		    lxi  b, BPL
+0519 0540 CD 03 04             		    call move
+0521 0543 C2 3D 05             		    jnz  down
+0524 0546 CD C9 04             		    call checkLines
+0527 0549 CD FA 03             		    call newFigure
+0531 054C C3 52 05             		    jmp gameLoop
+0535 054F                      		tetris:
+0536 054F CD 8D 04             		    call newGame
+0538 0552                      		gameLoop:
+0539 0552 3A 19 03             		    lda  gameOverFlag
+0540 0555 B7                   		    ora  a
+0541 0556 C0                   		    rnz
+0543 0557 3A 0D 03             		    lda  timer
+0544 055A 3D                   		    dcr  a
+0545 055B C2 6B 05             		    jnz  gameLoop_2
+0547 055E CD 2F 05             		    call tick
+0549 0561 2A 18 03             		    lhld level ; 0..5
+0550 0564 26 00                		    mvi  h, 0
+0551 0566 11 07 03             		    lxi  d, speeds
+0552 0569 19                   		    dad  d
+0553 056A 7E                   		    mov  a, m
+0555 056B                      		gameLoop_2:
+0556 056B 32 0D 03             		    sta  timer ; by level
+0559 056E CD C8 07             		    call rand
+0562 0571 CD 12 FC             		    call inkey_FC12
+0565 0574 2A 0E 03             		    lhld lastPressedKey
+0566 0577 BD                   		    cmp  l
+0567 0578 C2 80 05             		    jnz  gameLoop_1a
+0568 057B 3E FF                		    mvi  a, 0FFh
+0569 057D C3 83 05             		    jmp  gameLoop_2a
+0570 0580                      		gameLoop_1a:
+0571 0580 32 0E 03             		    sta  lastPressedKey
+0572 0583                      		gameLoop_2a:
+0574 0583                      		gameLoop_185:
+0576 0583 FE 88                		    cpi  136
+0577 0585 C2 91 05             		    jnz  gameLoop_16
+0578 0588 01 00 01             		    lxi  b, 100h
+0579 058B CD 03 04             		    call move
+0580 058E C3 52 05             		    jmp  gameLoop
+0581 0591                      		gameLoop_16:
+0582 0591 FE 31                		    cpi  '1'
+0583 0593 CA 25 05             		    jz   nextLevel
+0586 0596 FE 82                		    cpi  130
+0587 0598 CA 3D 05             		    jz   down
+0590 059B FE 84                		    cpi  132
+0591 059D C2 A6 05             		    jnz  gameLoop_18
+0592 05A0 01 FF 00             		    lxi  b, 0FFh
+0593 05A3 CD 03 04             		    call move
+0594 05A6                      		gameLoop_18:
+0596 05A6 FE 86                		    cpi  134
+0597 05A8 C2 B4 05             		    jnz  gameLoop_19
+0598 05AB 01 01 00             		    lxi  b, 01h
+0599 05AE CD 03 04             		    call move
+0600 05B1 C3 52 05             		    jmp  gameLoop
+0601 05B4                      		gameLoop_19:
+0602 05B4 01 00 00             		    lxi  b, 0
+0603 05B7 CD 03 04             		    call move
+0604 05BA C3 52 05             		    jmp  gameLoop
+0120 05BD                      		.include "bios.inc"
+0004 05BD                      		PALETTE_WHITE        = 0
+0005 05BD                      		PALETTE_YELLOW       = 1
+0006 05BD                      		PALETTE_MAGENTA      = 2
+0007 05BD                      		PALETTE_RED          = 3
+0008 05BD                      		PALETTE_CYAN         = 4
+0009 05BD                      		PALETTE_GREEN        = 5
+0010 05BD                      		PALETTE_BLUE         = 6
+0011 05BD                      		PALETTE_XXX          = 7
+0012 05BD                      		PALETTE_DARK_GRAY    = 8
+0013 05BD                      		PALETTE_DARK_YELLOW  = 9
+0014 05BD                      		PALETTE_DARK_MAGENTA = 10
+0015 05BD                      		PALETTE_DARK_RED     = 11
+0016 05BD                      		PALETTE_DARK_CYAN    = 12
+0017 05BD                      		PALETTE_DARK_GREEN   = 13
+0018 05BD                      		PALETTE_DARK_BLUE    = 14
+0019 05BD                      		PALETTE_BLACK        = 15
+0022 05BD                      		IO_PALETTE_0         = 90h
+0023 05BD                      		IO_PALETTE_1         = 91h
+0024 05BD                      		IO_PALETTE_2         = 92h
+0025 05BD                      		IO_PALETTE_3         = 93h
+0028 05BD                      		VIDEO_PAGE_0         = 0D000h
+0029 05BD                      		VIDEO_PAGE_1         = 09000h
+0030 05BD                      		VIDEO_WIDTH          = 384
+0031 05BD                      		VIDEO_HEIGHT         = 256
+0041 05BD                      		inkey_FC12           = 0FC12h
+0121 05BD                      		.include "graph.inc"
+0003 05BD                      		SYS_BACKUP_FROM = 0C800h
+0004 05BD                      		SYS_BACKUP_SIZE = 80h
+0005 05BD                      		SYS_BACKUP_TO   = 3h
+0007 05BD                      		NEW_BACKUP_FROM = 0C000h
+0008 05BD                      		SCO_BACKUP_FROM = 0C000h + (7 * 48 * 2)
+0013 05BD                      		clearScreen:
+0014 05BD CD CD 05             		    call clearScreen1
+0019 05C0                      		clearScreen2:
+0020 05C0 21 00 90             		    lxi  h, VIDEO_PAGE_1
+0021 05C3 3E C0                		    mvi  a, 0C0h
+0026 05C5                      		clearMem:
+0027 05C5 36 00                		    mvi  m, 0
+0028 05C7 23                   		    inx  h
+0029 05C8 BC                   		    cmp  h
+0030 05C9 C2 C5 05             		    jnz  clearMem
+0031 05CC C9                   		    ret
+0036 05CD                      		clearScreen1:
+0037 05CD 21 00 D0             		    lxi  h, VIDEO_PAGE_0
+0038 05D0 AF                   		    xra  a
+0039 05D1 C3 C5 05             		    jmp  clearMem
+0044 05D4                      		drawBackgrond:
+0046 05D4 11 7F C8             		    lxi  d, SYS_BACKUP_FROM + SYS_BACKUP_SIZE - 1
+0047 05D7 21 82 00             		    lxi  h, SYS_BACKUP_TO + SYS_BACKUP_SIZE - 1
+0048 05DA 01 80 00             		    lxi  b, SYS_BACKUP_SIZE
+0049 05DD CD 58 01             		    call memcpy8back
+0052 05E0 06 08                		    mvi  b, 8
+0053 05E2 CD 46 06             		    call setPaletteEx
+0054 05E5 CD 73 01             		    call delay8000
+0055 05E8 3E 0F                		    mvi  a, PALETTE_BLACK
+0056 05EA D3 90                		    out  IO_PALETTE_0
+0057 05EC D3 91                		    out  IO_PALETTE_1
+0058 05EE D3 92                		    out  IO_PALETTE_2
+0059 05F0 D3 93                		    out  IO_PALETTE_3
+0062 05F2 3A 18 03             		    lda  level
+0063 05F5 57                   		    mov  d, a
+0064 05F6 87                   		    add  a ;*2
+0065 05F7 87                   		    add  a ;*4
+0066 05F8 82                   		    add  d ;*5
+0067 05F9 16 00                		    mvi  d, 0
+0068 05FB 5F                   		    mov  e, a
+0069 05FC 21 A3 08             		    lxi  h, levels
+0070 05FF 19                   		    dad  d
+0071 0600 5E                   		    mov  e, m
+0072 0601 23                   		    inx  h
+0073 0602 56                   		    mov  d, m
+0074 0603 23                   		    inx  h
+0075 0604 7E                   		    mov  a, m ; Цвет фигуры и текста
+0076 0605 32 F6 06             		    sta  redrawNewFigure1_1
+0077 0608 23                   		    inx  h
+0078 0609 22 47 06             		    shld palette ; Палитра
+0080 060C D5                   		    push d
+0081 060D CD 07 02             		    call setTextColor
+0082 0610 D1                   		    pop  d
+0085 0611 01 00 90             		    lxi  b, VIDEO_PAGE_1
+0086 0614 CD D3 07             		    call unmlz
+0089 0617 21 FF FF             		    lxi  h, 0FFFFh
+0090 061A 11 FF EF             		    lxi  d, 0EFFFh
+0091 061D 01 00 30             		    lxi  b, 03000h
+0092 0620 CD 58 01             		    call memcpy8back
+0096 0623 11 82 00             		    lxi  d, SYS_BACKUP_TO + SYS_BACKUP_SIZE - 1
+0097 0626 21 7F C8             		    lxi  h, SYS_BACKUP_FROM + SYS_BACKUP_SIZE - 1
+0098 0629 01 80 00             		    lxi  b, SYS_BACKUP_SIZE
+0099 062C CD 58 01             		    call memcpy8back
+0101 062F CD A8 06             		    call copyImageFromScreen
+0102 0632 CD B8 06             		    call copyNewFigureBackground
+0103 0635 CD 9C 06             		    call copyScoreBackground
+0104 0638 CD B2 06             		    call copyImageToScreen
+0106 063B C9                   		    ret
+0110 063C                      		paletteShow:
+0111 063C 06 08                		    mvi  b, 8
+0112 063E CD 46 06             		    call setPaletteEx
+0113 0641 CD 73 01             		    call delay8000
+0114 0644 06 00                		    mvi  b, 0
+0115 0646                      		setPaletteEx:
+0116 0646                      		palette = $+1
+0117 0646 21 00 00             		    lxi  h, 0
+0118 0649 AF                   		    xra  a
+0119 064A B5                   		    ora  l
+0120 064B C8                   		    rz
+0122 064C 3E 0F                		    mvi  a, 15
+0123 064E B0                   		    ora  b
+0124 064F D3 90                		    out  IO_PALETTE_0
+0126 0651 7E                   		    mov  a, m
+0127 0652 B0                   		    ora  b
+0128 0653 D3 91                		    out  IO_PALETTE_1
+0129 0655 23                   		    inx  h
+0130 0656 7E                   		    mov  a, m
+0131 0657 B0                   		    ora  b
+0132 0658 D3 92                		    out  IO_PALETTE_2
+0134 065A 78                   		    mov  a, b
+0135 065B D3 93                		    out  IO_PALETTE_3
+0136 065D C9                   		    ret
+0141 065E                      		redrawScore:
+0142 065E CD 9C 06             		    call copyScoreBackground
+0144 0661 21 E7 D2             		    lxi  h, 0FFFFh-24-(45*256)
+0145 0664 22 E6 01             		    shld drawCharAddr
+0146 0667 2A 14 03             		    lhld score
+0147 066A CD 79 06             		    call drawNumber
+0149 066D 21 D7 D2             		    lxi  h, 0FFFFh-40-(45*256)
+0150 0670 22 E6 01             		    shld drawCharAddr
+0151 0673 2A 16 03             		    lhld bestScore
+0152 0676 C3 79 06             		    jmp  drawNumber
+0157 0679                      		drawNumber:
+0158 0679 EB                   		    xchg
+0159 067A                      		redrawScore_1:
+0161 067A 21 0A 00             		    lxi  h, 10
+0162 067D CD 7D 01             		    call div16
+0164 0680 E5                   		    push h
+0165 0681 7B                   		    mov  a, e
+0166 0682 C6 30                		    adi  '0'
+0167 0684 CD D7 01             		    call drawChar
+0168 0687 34                   		    inr  m
+0169 0688 D1                   		    pop  d
+0171 0689 7A                   		    mov  a, d
+0172 068A B3                   		    ora  e
+0173 068B C2 7A 06             		    jnz redrawScore_1
+0174 068E C9                   		    ret
+0179 068F                      		redrawNewFigure:
+0181 068F CD B8 06             		    call copyNewFigureBackground
+0185 0692 3A 12 03             		    lda  nextO
+0186 0695 21 E3 06             		    lxi  h, redrawNewFigure1
+0187 0698 CD A3 03             		    call decodeFigureEx
+0188 069B C9                   		    ret
+0192 069C                      		copyScoreBackground:
+0193 069C 01 28 05             		    lxi  b, 5 * 256 + 40
+0194 069F 11 A0 C2             		    lxi  d, SCO_BACKUP_FROM
+0195 06A2 21 D7 D2             		    lxi  h, 0FFFFh-40-(45*256)
+0196 06A5 C3 C1 06             		    jmp  copyImage
+0200 06A8                      		copyImageFromScreen:
+0202 06A8 21 7E 12             		    lxi  h, OPCODE_MOV_A_M + (256 * OPCODE_STAX_D)
+0203 06AB                      		copyImageTo:
+0204 06AB 22 CE 06             		    shld copyImage_o1
+0205 06AE 22 D3 06             		    shld copyImage_o2
+0206 06B1 C9                   		    ret
+0211 06B2                      		copyImageToScreen:
+0212 06B2 21 1A 77             		    lxi  h, OPCODE_LDAX_D + (256 * OPCODE_MOV_M_A)
+0213 06B5 C3 AB 06             		    jmp  copyImageTo
+0218 06B8                      		copyNewFigureBackground:
+0219 06B8 01 30 07             		    lxi  b, 7 * 256 + 48
+0220 06BB 11 00 C0             		    lxi  d, NEW_BACKUP_FROM
+0221 06BE 21 C8 F8             		    lxi  h, 0F8F8h - 48
+0226 06C1                      		copyImage:
+0228 06C1 7C                   		    mov  a, h
+0229 06C2 32 CD 06             		    sta  copyImage_h1
+0230 06C5 D6 40                		    sui  040h
+0231 06C7 32 D2 06             		    sta  copyImage_h2
+0232 06CA E5                   		    push h
+0233 06CB C5                   		    push b
+0235 06CC                      		copyImage_4:
+0237 06CC                      		copyImage_h1 = $+1
+0238 06CC 26 D0                		    mvi  h, 0D0h
+0239 06CE                      		copyImage_o1:
+0240 06CE 7E                   		    mov  a, m
+0241 06CF 12                   		    stax d
+0242 06D0 13                   		    inx  d
+0244 06D1                      		copyImage_h2 = $+1
+0245 06D1 26 90                		    mvi  h, 90h
+0246 06D3                      		copyImage_o2:
+0247 06D3 7E                   		    mov  a, m
+0248 06D4 12                   		    stax d
+0249 06D5 13                   		    inx  d
+0251 06D6 2C                   		    inr  l
+0253 06D7 0D                   		    dcr  c
+0254 06D8 C2 CC 06             		    jnz  copyImage_4
+0255 06DB C1                   		    pop  b
+0256 06DC E1                   		    pop  h
+0258 06DD 24                   		    inr  h
+0260 06DE 05                   		    dcr  b
+0261 06DF C2 C1 06             		    jnz  copyImage
+0262 06E2 C9                   		    ret
+0267 06E3                      		redrawNewFigure1:
+0268 06E3 E5                   		    push h
+0269 06E4 D5                   		    push d
+0270 06E5 C5                   		    push b
+0273 06E6 7B                   		    mov  a, e
+0274 06E7 87                   		    add  a
+0275 06E8 87                   		    add  a
+0276 06E9 5F                   		    mov  e, a
+0277 06EA 87                   		    add  a
+0278 06EB 83                   		    add  e
+0279 06EC 5F                   		    mov  e, a
+0280 06ED 3E F7                		    mvi  a, 0F7h
+0281 06EF 93                   		    sub  e
+0282 06F0 4F                   		    mov  c, a
+0285 06F1 7A                   		    mov  a, d
+0286 06F2 C6 0A                		    adi  10
+0287 06F4 47                   		    mov  b, a
+0290 06F5                      		redrawNewFigure1_1 = $+1
+0291 06F5 3E 00                		    mvi  a, 0
+0292 06F7 CD 37 07             		    call drawCell
+0294 06FA C1                   		    pop  b
+0295 06FB D1                   		    pop  d
+0296 06FC E1                   		    pop  h
+0299 06FD AF                   		    xra  a
+0300 06FE C9                   		    ret
+0122 06FF                      		.include "playfieldgraph.inc"
+0003 06FF                      		map2 = 3h ; Тут будет массив размером WIDTH * HEIGHT = 10 * 20 = 200 байт
+0005 06FF                      		PLAYFIELD_Y = 8
+0013 06FF                      		cellOff:
+0014 06FF F0 3F FF             		    db 240- 0,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0015 0703 EE FF FC             		    db 240- 2,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0016 0707 ED 03 FF             		    db 240- 3,003h,0FFh,0F0h ; 00000011,11111111,11110000
+0017 070B EB 0F FF             		    db 240- 5,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
+0018 070F E9 3F FF             		    db 240- 7,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0019 0713 E7 FF FC             		    db 240- 9,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0020 0717 E6 03 FF             		    db 240-10,003h,0FFh,0F0h ; 00000011,11111111,11110000
+0021 071B E4 0F FF             		    db 240-12,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
+0022 071F E2 3F FF             		    db 240-14,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0023 0723 E0 FF FC             		    db 240-16,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0025 0727 FE FF FC             		    db 254- 0,0FFh,0FCh,000h ; 11111111,11111100,00000000
+0026 072B FD 03 FF             		    db 254- 1,003h,0FFh,0F0h ; 00000011,11111111,11110000
+0027 072F FB 0F FF             		    db 254- 3,00Fh,0FFh,0C0h ; 00001111,11111111,11000000
+0028 0733 F9 3F FF             		    db 254- 5,03Fh,0FFh,000h ; 00111111,11111111,00000000
+0030 0737                      		drawCell:
+0032 0737 0F                   		    rrc
+0033 0738 21 F6 00             		    lxi  h, OPCODE_ORI + (OPCODE_NOP * 256)
+0034 073B 11 E6 2F             		    lxi  d, OPCODE_ANI + (OPCODE_CMA * 256)
+0035 073E DA 43 07             		    jc  drawCell_1
+0036 0741 EB                   		    xchg
+0037 0742 2F                   		    cma
+0038 0743                      		drawCell_1:
+0039 0743 F5                   		    push psw
+0040 0744 7C                   		    mov  a, h
+0041 0745 32 6A 07             		    sta  drawColumn_cma1
+0042 0748 22 7B 07             		    shld drawColumn_op1
+0043 074B F1                   		    pop psw
+0046 074C 0F                   		    rrc
+0047 074D DA 51 07             		    jc  drawCell_2
+0048 0750 EB                   		    xchg
+0049 0751                      		drawCell_2:
+0050 0751 7C                   		    mov  a, h
+0051 0752 32 6F 07             		    sta  drawColumn_cma2
+0052 0755 22 80 07             		    shld drawColumn_op2
+0057 0758 21 FF 06             		    lxi  h, cellOff
+0058 075B 58                   		    mov  e, b
+0059 075C 16 00                		    mvi  d, 0
+0060 075E 19                   		    dad  d
+0061 075F 19                   		    dad  d
+0062 0760 19                   		    dad  d
+0063 0761 19                   		    dad  d
+0064 0762 56                   		    mov  d, m
+0065 0763 59                   		    mov  e, c
+0068 0764 06 03                		    mvi  b, 3
+0069 0766                      		drawColumn_6:
+0072 0766 23                   		    inx  h
+0074 0767 E5                   		    push h
+0075 0768 D5                   		    push d
+0078 0769 7E                   		    mov  a, m
+0079 076A                      		drawColumn_cma1:
+0080 076A 2F                   		    cma
+0081 076B 32 7C 07             		    sta drawColumn_op1 + 1
+0084 076E 7E                   		    mov  a, m
+0085 076F                      		drawColumn_cma2:
+0086 076F 2F                   		    cma
+0087 0770 32 81 07             		    sta drawColumn_op2 + 1
+0090 0773 7A                   		    mov  a, d
+0091 0774 D6 40                		    sui  40h
+0092 0776 67                   		    mov  h, a
+0093 0777 6B                   		    mov  l, e
+0096 0778 0E 0C                		    mvi  c, 12
+0097 077A                      		drawColumn_2:
+0100 077A 1A                   		    ldax d
+0101 077B                      		drawColumn_op1 = $
+0102 077B E6 55                		    ani  55h
+0103 077D 12                   		    stax d
+0104 077E 1D                   		    dcr  e
+0107 077F 7E                   		    mov  a, m
+0108 0780                      		drawColumn_op2 = $
+0109 0780 E6 55                		    ani  55h
+0110 0782 77                   		    mov  m, a
+0111 0783 2D                   		    dcr  l
+0114 0784 0D                   		    dcr  c
+0115 0785 C2 7A 07             		    jnz  drawColumn_2
+0117 0788 D1                   		    pop  d
+0118 0789 E1                   		    pop  h
+0121 078A 15                   		    dcr  d
+0124 078B 05                   		    dcr  b
+0125 078C C2 66 07             		    jnz  drawColumn_6
+0127 078F C9                   		    ret
+0132 0790                      		redrawMap:
+0134 0790 11 20 02             		    lxi d, map + START ;b
+0135 0793 21 03 00             		    lxi h, map2
+0138 0796 0E F7                		    mvi c, 0FFh - PLAYFIELD_Y ;e
+0139 0798                      		redrawMap_1:
+0142 0798 06 00                		    mvi b, 0 ; d
+0143 079A                      		redrawMap_2:
+0148 079A 1A                   		    ldax d ; b
+0149 079B BE                   		    cmp  m
+0150 079C C4 B3 07             		    cnz  redrawMap_4
+0152 079F 04                   		    inr  b ; d
+0153 07A0 13                   		    inx  d ; b
+0154 07A1 23                   		    inx  h
+0155 07A2 78                   		    mov  a, b ; d
+0156 07A3 FE 0A                		    cpi  WIDTH
+0157 07A5 C2 9A 07             		    jnz  redrawMap_2
+0159 07A8 13                   		    inx  d ; b
+0160 07A9 79                   		    mov  a, c ; e
+0161 07AA D6 0C                		    sui  12
+0162 07AC 4F                   		    mov  c, a ; e
+0163 07AD FE 07                		    cpi  0FFh - PLAYFIELD_Y - (HEIGHT * 12)
+0164 07AF C2 98 07             		    jnz  redrawMap_1
+0165 07B2 C9                   		    ret
+0169 07B3                      		redrawMap_4:
+0170 07B3 77                   		    mov  m, a
+0171 07B4 C5                   		    push b
+0172 07B5 D5                   		    push d
+0173 07B6 E5                   		    push h
+0174 07B7 CD 37 07             		    call drawCell
+0175 07BA E1                   		    pop  h
+0176 07BB D1                   		    pop  d
+0177 07BC C1                   		    pop  b
+0178 07BD C9                   		    ret
+0183 07BE                      		invalidatePlayfield:
+0184 07BE 21 03 00             		    lxi  h, map2
+0185 07C1 3E FF                		    mvi  a, 0FFh
+0186 07C3 0E C8                		    mvi  c, (WIDTH * HEIGHT)
+0187 07C5 C3 6C 01             		    jmp  memset8
+0123 07C8                      		.include "rand.inc"
+0003 07C8                      		rand:
+0004 07C8                      		rand_seed = $+1
+0005 07C8 3E 0D                		    mvi  a, 13
+0006 07CA 5F                   		    mov  e, a
+0007 07CB 87                   		    add  a
+0008 07CC 87                   		    add  a
+0009 07CD 83                   		    add  e
+0010 07CE 3C                   		    inr  a
+0011 07CF 32 C9 07             		    sta  rand_seed
+0012 07D2 C9                   		    ret
+0124 07D3                      		.include "unmlz.inc"
+0003 07D3 3E 80                		unmlz:  mvi    a, 80h
+0004 07D5                      		UNLD:
+0005 07D5 32 E9 07             		        sta    unmlz_1
+0006 07D8 1A                   		        ldax   d
+0007 07D9 13                   		        inx    d
+0008 07DA C3 E6 07             		        jmp    UNSTA
+0012 07DD 7E                   		UNST3:  mov    a, m
+0013 07DE 23                   		        inx    h
+0014 07DF 02                   		        stax   b
+0015 07E0 03                   		        inx    b
+0017 07E1 7E                   		UNST2:  mov    a, m
+0018 07E2 23                   		        inx    h
+0019 07E3 02                   		        stax   b
+0020 07E4 03                   		        inx    b
+0022 07E5 7E                   		UNST1:  mov    a, m
+0024 07E6 02                   		UNSTA:  stax   b
+0025 07E7 03                   		        inx    b
+0027 07E8                      		unmlz_1 = $+1
+0028 07E8                      		ULOOP:
+0029 07E8 3E 00                		        mvi    a, 0
+0030 07EA 87                   		        add    a
+0031 07EB C2 F1 07             		        jnz    L1
+0032 07EE 1A                   		        ldax   d
+0033 07EF 13                   		        inx    d
+0034 07F0 17                   		        ral
+0036 07F1 DA D5 07             		L1:     jc     UNLD
+0037 07F4 87                   		        add    a
+0038 07F5 C2 FB 07             		        jnz    L3
+0039 07F8 1A                   		        ldax   d
+0040 07F9 13                   		        inx    d
+0041 07FA 17                   		        ral
+0043 07FB DA 21 08             		L3:     jc     UN2
+0044 07FE 87                   		        add    a
+0045 07FF C2 05 08             		        jnz    L2
+0046 0802 1A                   		        ldax   d
+0047 0803 13                   		        inx    d
+0048 0804 17                   		        ral
+0050 0805 DA 15 08             		L2:     jc     UN1
+0051 0808 21 FF 3F             		        lxi    h, 3FFFh
+0052 080B CD 6C 08             		        call   GETBITS
+0053 080E 32 E9 07             		        sta    unmlz_1
+0054 0811 09                   		        dad    b
+0055 0812 C3 E5 07             		        jmp    UNST1
+0059 0815 32 E9 07             		UN1:    sta    unmlz_1
+0060 0818 1A                   		        ldax    d
+0061 0819 13                   		        inx    d
+0062 081A 6F                   		        mov    l, a
+0063 081B 26 FF                		        mvi    h, 0FFh
+0064 081D 09                   		        dad    b
+0065 081E C3 E1 07             		        jmp    UNST2
+0069 0821 87                   		UN2:    add    a
+0070 0822 C2 28 08             		        jnz    L4
+0071 0825 1A                   		        ldax    d
+0072 0826 13                   		        inx    d
+0073 0827 17                   		        ral
+0075 0828 DA 32 08             		L4:     jc    UN3
+0076 082B CD 81 08             		        call    GETBIGD
+0077 082E 09                   		        dad    b
+0078 082F C3 DD 07             		        jmp    UNST3
+0082 0832 26 00                		UN3:    mvi    h, 0
+0084 0834 24                   		UN3A:   inr    h
+0085 0835 87                   		        add    a
+0086 0836 C2 3C 08             		        jnz    L5
+0087 0839 1A                   		        ldax   d
+0088 083A 13                   		        inx    d
+0089 083B 17                   		        ral
+0091 083C D2 34 08             		L5:     jnc    UN3A
+0092 083F F5                   		        push   psw
+0093 0840 7C                   		        mov    a, h
+0094 0841 FE 08                		        cpi    8
+0095 0843 D2 6A 08             		        jnc    UNEXIT
+0096 0846 3E 00                		        mvi    a, 0
+0098 0848 1F                   		L5B:    rar
+0099 0849 25                   		        dcr    h
+0100 084A C2 48 08             		        jnz    L5B
+0101 084D 67                   		        mov    h, a
+0102 084E 2E 01                		        mvi    l, 1
+0103 0850 F1                   		        pop    psw
+0104 0851 CD 6C 08             		        call   GETBITS
+0105 0854 23                   		        inx    h
+0106 0855 23                   		        inx    h
+0107 0856 E5                   		        push   h
+0108 0857 CD 81 08             		        call   GETBIGD
+0109 085A EB                   		        xchg
+0110 085B E3                   		        xthl
+0111 085C EB                   		        xchg
+0112 085D 09                   		        dad    b
+0114 085E 7E                   		LDIR:   mov    a, m
+0115 085F 23                   		        inx    h
+0116 0860 02                   		        stax   b
+0117 0861 03                   		        inx    b
+0118 0862 1D                   		        dcr    e
+0119 0863 C2 5E 08             		        jnz    LDIR
+0120 0866 D1                   		        pop    d
+0121 0867 C3 E8 07             		        jmp    ULOOP
+0125 086A F1                   		UNEXIT: pop    psw
+0126 086B C9                   		        ret
+0130 086C                      		GETBITS:
+0131 086C 87                   		        add    a
+0132 086D C2 73 08             		        jnz    L7
+0133 0870 1A                   		        ldax   d
+0134 0871 13                   		        inx    d
+0135 0872 17                   		        ral
+0136 0873 DA 7B 08             		L7:     jc     GETB1
+0137 0876 29                   		        dad    h
+0138 0877 D8                   		        rc
+0139 0878 C3 6C 08             		        jmp    GETBITS
+0143 087B 29                   		GETB1:  dad    h
+0144 087C 2C                   		        inr    l
+0145 087D D8                   		        rc
+0146 087E C3 6C 08             		        jmp    GETBITS
+0150 0881                      		GETBIGD:
+0151 0881 87                   		        add    a
+0152 0882 C2 88 08             		        jnz    L8
+0153 0885 1A                   		        ldax   d
+0154 0886 13                   		        inx    d
+0155 0887 17                   		        ral
+0157 0888 DA 94 08             		L8:     jc     GETBD1
+0158 088B 32 E9 07             		        sta    unmlz_1
+0159 088E 1A                   		        ldax   d
+0160 088F 13                   		        inx    d
+0161 0890 6F                   		        mov    l, a
+0162 0891 26 FF                		        mvi    h, 0FFh
+0163 0893 C9                   		        ret
+0167 0894 21 FF 1F             		GETBD1: lxi    h, 1FFFh
+0168 0897 CD 6C 08             		        call   GETBITS
+0169 089A 32 E9 07             		        sta    unmlz_1
+0170 089D 65                   		        mov    h, l
+0171 089E 25                   		        dcr    h
+0172 089F 1A                   		        ldax   d
+0173 08A0 13                   		        inx    d
+0174 08A1 6F                   		        mov    l, a
+0175 08A2 C9                   		        ret
+0128 08A3                      		LEVELS_COUNT = 6
+0130 08A3 C1 08                		levels dw level1
+0131 08A5 00 03 04             		       db 0,3,4
+0132 08A8 32 16                		       dw level2
+0133 08AA 00 02 04             		       db 0,2,4
+0134 08AD DB 27                		       dw level3
+0135 08AF 00 03 05             		       db 0,3,5
+0136 08B2 E9 42                		       dw level4
+0137 08B4 00 03 04             		       db 0,3,4
+0138 08B7 2F 5C                		       dw level5
+0139 08B9 00 03 04             		       db 0,3,4
+0140 08BC CF 6F                		       dw level6
+0141 08BE 03 03 04             		       db 3,3,4
+0143 08C1                      		level1:
+0144 08C1                      		.include "graph/level1.inc"
 0002 08C1 FF C7 80             		  .db 255,199,128,254,19,8,239,29,137,191,248,220,251,243,163,80,162,156,82,252,3,211,8,112,28,215,170,119,105,221,254,79,250,181,74,29,42,140,55,212,252,229,238,0,187,255,17,221,255,64,131,15,62,249,224,128,34,22,232,29,226,232,252,40,7
 0003 0902 F4 08 10             		  .db 244,8,16,236,96,128,0,125,255,128,143,192,224,178,96,68,254,241,176,203,93,49,255,180,0,221,32,119,170,85,46,254,0,8,10,220,0,99,239,128,150,83,166,252,115,0,81,42,198,80,40,255,3,7,31,124,242,194,130,2,24,88,186,229,156
 0004 0943 27 FE 11             		  .db 39,254,17,229,1,6,246,8,16,32,192,40,7,255,224,240,120,188,94,175,87,171,115,146,213,234,246,245,250,253,254,163,254,126,252,236,248,224,128,29,92,0,9,238,237,46,131,250,249,36,11,208,248,252,248,239,239,170,117,96,0,223,171,16,252
@@ -1148,8 +1155,8 @@
 0052 1573 AB 01 CB             		  .db 171,1,203,28,168,20,227,20,60,228,197,75,0,158,220,120,56,24,15,61,199,179,255,7,31,216,63,127,18,34,0,255,208,69,216,52,195,206,50,0,28,3,194,1,48,8,12,17,131,45,193,159,255,0,135,14,28,56,246,227,231,239,63,56,84
 0053 15B4 60 FF D6             		  .db 96,255,214,0,29,243,0,16,12,218,48,204,110,55,224,12,56,8,14,16,7,173,129,157,255,0,131,7,124,255,150,115,228,55,230,246,15,253,0,97,205,223,0,150,0,168,0,48,53,24,249,0,7,10,108,255,35,244,228,6,12,156,118,179,102
 0054 15F5 D7 01 83             		  .db 215,1,131,104,236,239,255,193,251,182,0,248,95,68,0,111,208,0,123,63,160,32,85,254,63,177,236,137,25,228,153,0,140,204,213,0,198,6,135,245,254,7,176,255,241,244,131,195,99,211,0,128,192,193,240,248,96,213,182,242,1
-0327 1632                      		level2:
-0328 1632                      		.include "graph/level2.inc"
+0145 1632                      		level2:
+0146 1632                      		.include "graph/level2.inc"
 0002 1632 30 1E 20             		  .db 48,30,32,152,255,64,1,210,0,255,24,79,3,251,129,6,3,62,2,80,127,248,116,72,153,217,156,191,226,28,30,143,127,39,75,125,124,249,254,126,143,127,255,22,63,47,159,15,227,31,14,219,243,193,90,0,225,240,51,15,180,128,255,155,241
 0003 1673 E8 76 3F             		  .db 232,118,63,236,103,199,232,251,127,191,223,32,194,249,231,224,252,203,183,230,33,32,65,185,16,23,66,1,7,240,8,2,13,18,190,34,69,138,85,170,193,13,254,42,77,252,10,21,237,244,213,234,33,250,186,33,254,246,140,245,3,12,94,178,247
 0004 16B4 F6 F0 F1             		  .db 246,240,241,49,253,143,249,253,248,248,244,236,237,221,241,189,229,125,21,63,255,56,72,146,0,128,8,22,192,33,62,255,73,18,38,133,1,8,68,4,227,10,0,112,127,25,240,125,53,252,254,180,255,246,179,63,241,152,67,79,125,252,50,55,216
@@ -1220,8 +1227,8 @@
 0069 2735 04 FB FD             		  .db 4,251,253,199,37,94,28,1,196,187,251,159,124,41,248,7,252,243,236,239,223,1,105,193,159,95,24,111,241,200,254,120,99,199,47,95,202,255,204,2,0,128,236,192,176,248,8,70,22,223,191,141,92,139,254,240,14,215,23,173,16,250,93,4,103
 0070 2776 DF 1F E3             		  .db 223,31,227,72,238,251,255,195,199,77,3,124,0,16,12,135,26,127,255,62,193,199,227,235,104,151,187,177,156,147,169,126,182,12,224,24,253,224,193,7,123,8,31,15,31,3,1,131,64,206,176,241,40,171,232,191,31,222,194,199,224,240,164,248,255
 0071 27B7 38 70 93             		  .db 56,112,147,247,112,9,192,244,204,199,3,230,135,238,218,236,18,239,155,45,212,160,31,117,189,161,16,192,122,10,254,192,136,48,29,8
-0329 27DB                      		level3:
-0330 27DB                      		.include "graph/level3.inc"
+0147 27DB                      		level3:
+0148 27DB                      		.include "graph/level3.inc"
 0002 27DB C0 FF 98             		  .db 192,255,152,67,80,48,8,4,247,62,255,119,231,15,14,255,63,254,215,27,253,238,27,229,250,247,181,106,85,170,61,254,84,144,128,0,148,255,129,37,8,110,244,123,230,5,7,208,10,4,236,72,16,124,64,2,3,27,1,84,225,2,25,38,234
 0003 281C B9 03 F6             		  .db 185,3,246,33,60,237,136,87,255,255,234,63,131,56,252,216,238,110,233,60,23,10,169,255,203,119,200,227,97,167,223,2,76,226,249,22,248,185,172,236,10,172,6,231,182,39,228,32,184,36,3,145,2,248,63,128,32,129,193,136,216,255,220,191,62
 0004 285D 78 0C 15             		  .db 120,12,21,2,16,216,3,255,126,255,255,33,191,126,251,230,128,243,17,199,15,8,15,240,153,255,56,25,7,187,127,42,223,243,78,231,189,250,213,211,251,254,172,64,47,248,253,16,8,214,34,130,4,247,61,37,230,64,44,255,180,8,72,226,6
@@ -1329,8 +1336,8 @@
 0106 4243 80 B6 BB             		  .db 128,182,187,149,88,238,42,117,88,244,184,27,187,223,94,32,173,13,255,214,110,87,170,69,150,174,14,70,170,112,253,177,190,247,182,117,251,12,218,0,90,101,253,186,215,171,213,235,87,90,124,117,0,67,17,248,10,61,205,116,126,5,230,45,114
 0107 4284 11 FF FB             		  .db 17,255,251,218,191,247,245,191,197,136,16,128,214,84,130,218,80,234,24,213,1,66,255,113,248,205,177,123,231,87,127,186,253,191,225,131,128,11,124,224,243,129,162,117,235,178,223,123,58,127,238,105,143,250,254,122,245,250,254,241,234,125,171,85,251
 0108 42C5 5F FA 95             		  .db 95,250,149,242,132,223,129,230,247,198,213,6,205,106,200,159,216,164,127,79,202,199,216,4,250,85,200,235,213,114,236,24,234,236,192,32
-0331 42E9                      		level4:
-0332 42E9                      		.include "graph/level4.inc"
+0149 42E9                      		level4:
+0150 42E9                      		.include "graph/level4.inc"
 0002 42E9 00 7A FF             		  .db 0,122,255,16,63,32,96,64,3,1,7,251,79,223,159,55,119,147,255,247,255,251,108,255,227,255,254,252,237,253,250,159,254,245,234,209,128,160,241,21,0,136,68,65,206,28,224,198,2,5,0,199,250,18,65,10,32,1,235,196,20,232,241,226,255
 0003 432A 1F E0 79             		  .db 31,224,121,193,209,197,255,243,5,4,0,3,225,1,56,251,32,31,226,167,235,63,129,220,255,111,54,24,141,199,163,80,168,141,84,128,179,0,26,255,32,16,123,254,80,160,85,170,8,16,254,69,56,65,2,64,223,0,46,117,254,255,34,113,13
 0004 436B EA 92 D5             		  .db 234,146,213,254,234,195,115,254,52,120,7,12,28,24,0,167,38,255,65,67,63,30,31,148,255,15,255,231,71,167,87,254,171,83,27,81,169,140,85,126,205,84,82,106,40,68,115,20,128,31,254,2,230,12,16,0,25,224,63,50,193,240,133,16,63
@@ -1431,8 +1438,8 @@
 0099 5B8A 0A EB 3B             		  .db 10,235,59,20,248,8,159,252,32,198,168,243,224,191,220,240,123,221,251,254,176,24,70,63,130,128,140,255,16,169,134,85,218,2,84,248,140,175,254,173,134,147,226,254,126,5,0,104,2,135,159,192,224,199,240,248,216,252,254,54,125,0,90,18,2
 0100 5BCB 42 06 B9             		  .db 66,6,185,160,98,80,133,136,128,255,66,138,145,155,247,171,215,231,254,223,31,51,12,25,49,6,193,48,1,6,17,168,112,144,21,162,60,10,64,160,133,105,208,16,249,234,244,240,249,250,13,199,253,254,96,237,223,0,130,0,168,1,33,0,68
 0101 5C0C 54 6F CA             		  .db 84,111,202,48,3,89,253,13,102,75,130,228,77,194,83,254,23,253,214,56,207,255,57,60,61,62,29,218,254,29,131,222,24,253,4
-0333 5C2F                      		level5:
-0334 5C2F                      		.include "graph/level5.inc"
+0151 5C2F                      		level5:
+0152 5C2F                      		.include "graph/level5.inc"
 0002 5C2F 00 8F 80             		  .db 0,143,128,135,241,208,143,163,155,124,148,191,252,240,255,254,192,236,248,120,188,176,178,220,130,0,255,188,6,250,131,222,56,250,7,140,98,240,192,227,5,110,255,143,1,192,63,254,195,128,130,2,152,255,241,0,46,211,163,190,198,183,200,208,64
 0003 5C70 D6 84 E7             		  .db 214,132,231,47,112,198,50,192,255,76,128,161,176,171,224,12,120,241,251,254,126,127,176,63,255,6,207,252,248,162,251,224,236,62,185,199,31,99,255,60,247,194,253,119,253,111,191,95,171,85,170,187,254,234,149,161,106,254,248,96,214,254,227,0,29
 0004 5CB1 0E 71 3C             		  .db 14,113,60,63,61,133,143,15,51,23,27,31,32,255,120,159,63,29,255,28,223,222,95,110,156,110,254,20,238,63,124,255,103,253,255,190,248,28,111,155,252,189,30,206,195,191,73,254,248,190,245,209,255,30,28,243,206,49,57,126,194,2,255,177,79
@@ -1511,8 +1518,8 @@
 0077 6F3A FB 62 84             		  .db 251,98,132,130,68,162,147,254,84,254,42,226,85,2,21,124,20,168,0,208,127,95,241,130,1,2,189,6,254,230,180,226,90,254,245,38,255,241,255,226,140,255,12,47,227,233,247,243,139,228,193,197,133,249,246,240,225,130,5,4,127,107,0,80,184
 0078 6F7B 00 80 FF             		  .db 0,128,255,201,226,252,255,241,129,10,84,168,80,160,1,176,63,55,115,254,191,143,31,63,253,47,42,44,56,34,21,125,252,255,250,218,248,0,91,164,252,248,253,226,197,170,149,168,131,129,193,101,242,199,216,19,251,16,10,21,241,170,85,255,0
 0079 6FBC 98 1E EF             		  .db 152,30,239,255,239,204,200,205,138,207,19,2,168,77,192,253,48,255,8
-0335 6FCF                      		level6:
-0336 6FCF                      		.include "graph/level6.inc"
+0153 6FCF                      		level6:
+0154 6FCF                      		.include "graph/level6.inc"
 0002 6FCF 2B C7 07             		  .db 43,199,7,127,241,238,243,63,14,176,191,23,255,103,187,207,223,190,243,248,72,220,254,253,252,191,216,237,248,224,255,131,215,158,18,247,20,242,0,224,63,255,253,212,241,98,115,236,228,199,204,252,252,164,244,160,224,176,120,63,144,80,112,0,115
 0003 7010 FF B0 06             		  .db 255,176,6,156,12,251,96,128,115,251,1,154,8,246,2,66,238,140,160,192,243,31,56,11,4,15,9,255,88,192,64,28,0,124,176,128,224,252,160,182,231,24,60,233,180,16,240,221,128,10,4,6,249,248,236,200,252,104,241,243,168,152,136,121,163
 0004 7051 FB FF 5C             		  .db 251,255,92,39,6,248,115,14,223,178,250,254,4,246,36,24,68,190,132,243,37,33,135,137,248,152,252,100,168,239,255,251,127,139,128,254,5,0,250,8,183,249,31,255,239,191,170,85,138,150,81,143,30,63,255,124,158,123,60,40,19,255,14,167,211
@@ -1585,8 +1592,8 @@
 0071 8154 60 16 83             		  .db 96,22,131,207,223,65,162,69,11,251,22,44,88,177,98,111,246,248,4,225,30,23,172,72,2,57,197,248,8,138,243,124,112,24,218,22,17,222,76,144,203,60,244,4,200,49,215,113,190,9,221,190,95,205,253,71,65,97,232,153,239,139,4,9,19
 0072 8195 76 81 EC             		  .db 118,129,236,32,250,148,202,117,18,9,241,146,246,127,157,118,255,248,49,98,120,7,96,237,123,245,3,37,42,62,219,41,40,172,255,46,149,244,54,24,4,75,243,127,47,10,199,21,63,177,31,114,49,211,250,22,197,54,2,230,235,62,76,176,128
 0073 81D6 F2 EC E9             		  .db 242,236,233,2
-0337 81DA                      		font:
-0338 81DA                      		.include "graph/font.inc"
+0155 81DA                      		font:
+0156 81DA                      		.include "graph/font.inc"
 0001 81DA 00 00 00             		  .db   0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0 ; 20h
 0002 81E6 C0 C0 00             		  .db 192,192,  0, 96, 96,112, 48, 56, 56, 60, 28, 30 ; 21h !
 0003 81F2 00 00 00             		  .db   0,  0,  0,  0,  0,  0,  0,  0,  0, 72,108,126 ; 22h "
@@ -1646,161 +1653,158 @@
 0057 847A C6 C6 C6             		  .db 198,198,198,198,198,198,108, 56,108,198,198,198 ; 58h X
 0058 8486 7C C6 C6             		  .db 124,198,198,  6,  6,  6,  6,126,198,198,198,198 ; 59h Y
 0059 8492 FE C0 C0             		  .db 254,192,192,192,192,192,192,124,  6,  6,  6,254 ; 5Ah Z
-0342 849E                      		.include "intro.inc"
-0001 849E                      		LOGO_WIDTH  = 320
-0002 849E                      		LOGO_HEIGHT = 166
-0003 849E                      		LOGO_SIZE   = (LOGO_WIDTH / 8 * LOGO_HEIGHT)
-0004 849E                      		LOGO_DEST   = (VIDEO_PAGE_0 + ((VIDEO_WIDTH - LOGO_WIDTH) / 2 / 8 * 256) - 16)
-0006 849E                      		PLANE_WIDTH      = 19
-0007 849E                      		PLANE_HEIGHT     = 12
-0008 849E                      		PLANE_SIZE_1     = (PLANE_WIDTH * PLANE_HEIGHT * 3)
-0009 849E                      		PLANE_SIZE_2     = ((PLANE_WIDTH + 1) * PLANE_HEIGHT * 3)
-0011 849E                      		PACKED_LOGO_SIZE = 2034
-0013 849E                      		packedLogo2      = 0C000h
-0014 849E                      		PLANE_BUFFER_2   = 0C880h ; 19*12*2 = 456 байт
-0015 849E                      		PLANE_BUFFER     = (PLANE_BUFFER_2 + (19*12*2)) ; 48*12*2 = 1152 байт
-0017 849E                      		OPCODE_ANA_M     = 0A6h
-0018 849E                      		OPCODE_ORA_M     = 0B6h
-0019 849E                      		OPCODE_RET       = 0C9h
-0021 849E                      		Y_MULTIPLIER = 256
-0025 849E                      		intro:
-0027 849E 21 61 8E             		    lxi  h, packedLogo
-0028 84A1 11 00 C0             		    lxi  d, packedLogo2
-0029 84A4 06 00                		    mvi  b, 0
-0030 84A6 CD 94 85             		    call memcpyq
-0031 84A9 EB                   		    xchg
-0032 84AA 21 61 92             		    lxi  h, packedLogo + 1024
-0033 84AD CD 94 85             		    call memcpyq
-0035 84B0 3E 02                		    mvi a, 2
-0036 84B2 CD D9 01             		    call setTextColor
-0039 84B5 3E 0F                		    mvi  a, PALETTE_BLACK
-0040 84B7 D3 90                		    out  IO_PALETTE_0
-0041 84B9 D3 91                		    out  IO_PALETTE_1
-0042 84BB D3 92                		    out  IO_PALETTE_2
-0043 84BD D3 93                		    out  IO_PALETTE_3
-0046 84BF CD BD 05             		    call clearScreen
-0049 84C2 21 2F 88             		    lxi  h, introText
-0050 84C5 CD 44 01             		    call drawText
-0053 84C8 CD 22 86             		    call paletteOn
-0058 84CB CD 70 01             		    call pressAnyKey
-0061 84CE                      		introExit:
-0062 84CE 00                   		    nop
-0063 84CF 3E C9                		    mvi  a, OPCODE_RET
-0064 84D1 32 CE 84             		    sta  introExit
-0067 84D4                      		introOff:
-0068 84D4 CD 30 86             		    call paletteOff
-0070 84D7 CD BD 05             		    call clearScreen
-0073 84DA 11 00 C0             		    lxi  d, packedLogo2
-0074 84DD 01 F0 D3             		    lxi  b, LOGO_DEST
-0075 84E0 CD D3 07             		    call unmlz
-0078 84E3 11 E0 ED             		    lxi  d, LOGO_DEST + LOGO_SIZE
-0079 84E6 21 F0 FB             		    lxi  h, LOGO_DEST + (LOGO_WIDTH / 8 * VIDEO_HEIGHT)
-0080 84E9 06 28                		    mvi  b, 40
-0081 84EB                      		intro_1:
-0082 84EB 0E A6                		    mvi  c, LOGO_HEIGHT
-0083 84ED                      		intro_2:
-0084 84ED 1B                   		    dcx  d
-0085 84EE 1A                   		    ldax d
-0086 84EF 2B                   		    dcx  h
-0087 84F0 77                   		    mov  m, a
-0088 84F1 0D                   		    dcr  c
-0089 84F2 C2 ED 84             		    jnz  intro_2
-0090 84F5 0E 5A                		    mvi  c, VIDEO_HEIGHT - LOGO_HEIGHT
-0091 84F7 AF                   		    xra  a
-0092 84F8                      		intro_3:
-0093 84F8 2B                   		    dcx  h
-0094 84F9 77                   		    mov  m, a
-0095 84FA 0D                   		    dcr  c
-0096 84FB C2 F8 84             		    jnz  intro_3
-0097 84FE 05                   		    dcr  b
-0098 84FF C2 EB 84             		    jnz  intro_1
-0101 8502 CD 22 86             		    call paletteOn
-0104 8505 21 73 86             		    lxi  h, introText2
-0105 8508                      		intro_4:
-0106 8508 CD 12 FC             		    call inkey_FC12
-0107 850B FE FF                		    cpi  0FFh
-0108 850D C2 30 86             		    jnz  paletteOff
-0109 8510 11 00 20             		    lxi  d, 2000h
-0110 8513 CD A2 01             		    call delay
-0111 8516 7E                   		    mov  a, m
-0112 8517 FE 21                		    cpi  '!'
-0113 8519 CA F3 85             		    jz   intro_5
-0114 851C CD 4B 01             		    call drawText2
-0115 851F C2 08 85             		    jnz  intro_4
-0118 8522                      		fly:
-0120 8522 CD A8 06             		    call copyImageFromScreen
-0121 8525 21 90 D0             		    lxi  h, 0D090h
-0122 8528 01 0C 30             		    lxi  b, 48 * 256 + PLANE_HEIGHT ; width * 256 + height
-0123 852B 11 48 CA             		    lxi  d, PLANE_BUFFER ; to
-0124 852E CD C1 06             		    call copyImage
-0125 8531 CD B2 06             		    call copyImageToScreen
-0127 8534                      		fly_0:
-0129 8534 21 90 BE             		    lxi  h, 0D090h - ((PLANE_WIDTH - 1) * Y_MULTIPLIER)
-0130 8537 22 5E 85             		    shld fly_a1
-0133 853A 21 98 C8             		    lxi  h, PLANE_BUFFER - ((PLANE_WIDTH - 1) * PLANE_HEIGHT * 2)
-0134 853D 22 4D 85             		    shld fly_a2
-0137 8540                      		fly_1:
-0139 8540 06 08                		    mvi  b, 8
-0140 8542                      		fly_2:
-0141 8542 C5                   		    push b
-0144 8543 21 41 89             		    lxi  h, plane
-0145 8546 CD C9 85             		    call shiftImage
-0148 8549 21 41 89             		    lxi  h, plane
-0149 854C                      		fly_a2 = $+1
-0150 854C 01 48 CA             		    lxi  b, PLANE_BUFFER
-0151 854F 11 80 C8             		    lxi  d, PLANE_BUFFER_2
-0152 8552 3E E4                		    mvi  a, PLANE_WIDTH * PLANE_HEIGHT
-0153 8554 CD B1 85             		    call copyMaskedImageToBuffer
-0156 8557 01 0C 13             		    lxi  b, PLANE_WIDTH * 256 + PLANE_HEIGHT ; width * 256 + height
-0157 855A 11 80 C8             		    lxi  d, PLANE_BUFFER_2 ; to
-0158 855D                      		fly_a1 = $+1
-0159 855D 21 90 D0             		    lxi  h, 0D090h ; from
-0160 8560 CD 4C 86             		    call copyImageSafe
-0162 8563 C1                   		    pop b
-0165 8564 CD 12 FC             		    call inkey_FC12
-0166 8567 FE FF                		    cpi  0FFh
-0167 8569 C2 30 86             		    jnz  paletteOff
-0169 856C 05                   		    dcr b
-0170 856D C2 42 85             		    jnz fly_2
-0173 8570 21 65 89             		    lxi  h, plane + (PLANE_HEIGHT * 3)
-0174 8573 11 41 89             		    lxi  d, plane
-0175 8576 06 AB                		    mvi  b, PLANE_SIZE_1 / 4
-0176 8578 CD 94 85             		    call memcpyq
-0179 857B 2A 4D 85             		    lhld fly_a2
-0180 857E 11 18 00             		    lxi  d, PLANE_HEIGHT * 2
-0181 8581 19                   		    dad  d
-0182 8582 22 4D 85             		    shld fly_a2
-0185 8585 2A 5E 85             		    lhld fly_a1
-0186 8588 24                   		    inr  h
-0187 8589 22 5E 85             		    shld fly_a1
-0190 858C 7C                   		    mov  a, h
-0191 858D B7                   		    ora  a
-0192 858E C2 40 85             		    jnz  fly_1
-0195 8591 C3 34 85             		    jmp  fly_0
-0199 8594                      		memcpyq:
-0201 8594 E5                   		    push h
-0202 8595 21 02 00             		    lxi  h, 2
-0203 8598 39                   		    dad  sp
-0204 8599 22 AE 85             		    shld memcpyq_2
-0205 859C E1                   		    pop  h
-0206 859D F9                   		    sphl
-0207 859E EB                   		    xchg
-0208 859F                      		memcpyq_1:
-0209 859F D1                   		    pop  d
-0210 85A0 73                   		    mov  m, e
-0211 85A1 23                   		    inx  h
-0212 85A2 72                   		    mov  m, d
-0213 85A3 23                   		    inx  h
-0214 85A4 D1                   		    pop  d
-0215 85A5 73                   		    mov  m, e
-0216 85A6 23                   		    inx  h
-0217 85A7 72                   		    mov  m, d
-0218 85A8 23                   		    inx  h
-0219 85A9 05                   		    dcr  b
-0220 85AA C2 9F 85             		    jnz  memcpyq_1
-0221 85AD                      		memcpyq_2 = $+1
-0222 85AD 31 00 00             		    lxi  sp, 0
-0223 85B0 C9                   		    ret
+0160 849E                      		.include "intro.inc"
+0003 849E                      		LOGO_WIDTH  = 320
+0004 849E                      		LOGO_HEIGHT = 166
+0005 849E                      		LOGO_SIZE   = (LOGO_WIDTH / 8 * LOGO_HEIGHT)
+0006 849E                      		LOGO_DEST   = (VIDEO_PAGE_0 + ((VIDEO_WIDTH - LOGO_WIDTH) / 2 / 8 * 256) - 16)
+0008 849E                      		PLANE_WIDTH      = 19
+0009 849E                      		PLANE_HEIGHT     = 12
+0010 849E                      		PLANE_SIZE_1     = (PLANE_WIDTH * PLANE_HEIGHT * 3)
+0011 849E                      		PLANE_SIZE_2     = ((PLANE_WIDTH + 1) * PLANE_HEIGHT * 3)
+0013 849E                      		PACKED_LOGO_SIZE = 2034
+0015 849E                      		packedLogo2      = 0C000h
+0016 849E                      		PLANE_BUFFER_2   = 0C880h ; 19*12*2 = 456 байт
+0017 849E                      		PLANE_BUFFER     = (PLANE_BUFFER_2 + (19*12*2)) ; 48*12*2 = 1152 байт
+0019 849E                      		Y_MULTIPLIER = 256
+0024 849E                      		intro:
+0026 849E 21 61 8E             		    lxi  h, packedLogo
+0027 84A1 11 00 C0             		    lxi  d, packedLogo2
+0028 84A4 06 00                		    mvi  b, 0
+0029 84A6 CD 94 85             		    call memcpyq
+0030 84A9 EB                   		    xchg
+0031 84AA 21 61 92             		    lxi  h, packedLogo + 1024
+0032 84AD CD 94 85             		    call memcpyq
+0034 84B0 3E 02                		    mvi a, 2
+0035 84B2 CD 07 02             		    call setTextColor
+0038 84B5 3E 0F                		    mvi  a, PALETTE_BLACK
+0039 84B7 D3 90                		    out  IO_PALETTE_0
+0040 84B9 D3 91                		    out  IO_PALETTE_1
+0041 84BB D3 92                		    out  IO_PALETTE_2
+0042 84BD D3 93                		    out  IO_PALETTE_3
+0045 84BF CD BD 05             		    call clearScreen
+0048 84C2 21 2F 88             		    lxi  h, introText
+0049 84C5 CD AB 01             		    call drawText
+0052 84C8 CD 22 86             		    call paletteOn
+0057 84CB CD 44 01             		    call pressAnyKey
+0060 84CE                      		introExit:
+0061 84CE 00                   		    nop
+0062 84CF 3E C9                		    mvi  a, OPCODE_RET
+0063 84D1 32 CE 84             		    sta  introExit
+0066 84D4                      		introOff:
+0067 84D4 CD 30 86             		    call paletteOff
+0069 84D7 CD BD 05             		    call clearScreen
+0072 84DA 11 00 C0             		    lxi  d, packedLogo2
+0073 84DD 01 F0 D3             		    lxi  b, LOGO_DEST
+0074 84E0 CD D3 07             		    call unmlz
+0077 84E3 11 E0 ED             		    lxi  d, LOGO_DEST + LOGO_SIZE
+0078 84E6 21 F0 FB             		    lxi  h, LOGO_DEST + (LOGO_WIDTH / 8 * VIDEO_HEIGHT)
+0079 84E9 06 28                		    mvi  b, 40
+0080 84EB                      		intro_1:
+0081 84EB 0E A6                		    mvi  c, LOGO_HEIGHT
+0082 84ED                      		intro_2:
+0083 84ED 1B                   		    dcx  d
+0084 84EE 1A                   		    ldax d
+0085 84EF 2B                   		    dcx  h
+0086 84F0 77                   		    mov  m, a
+0087 84F1 0D                   		    dcr  c
+0088 84F2 C2 ED 84             		    jnz  intro_2
+0089 84F5 0E 5A                		    mvi  c, VIDEO_HEIGHT - LOGO_HEIGHT
+0090 84F7 AF                   		    xra  a
+0091 84F8                      		intro_3:
+0092 84F8 2B                   		    dcx  h
+0093 84F9 77                   		    mov  m, a
+0094 84FA 0D                   		    dcr  c
+0095 84FB C2 F8 84             		    jnz  intro_3
+0096 84FE 05                   		    dcr  b
+0097 84FF C2 EB 84             		    jnz  intro_1
+0100 8502 CD 22 86             		    call paletteOn
+0103 8505 21 73 86             		    lxi  h, introText2
+0104 8508                      		intro_4:
+0105 8508 CD 12 FC             		    call inkey_FC12
+0106 850B FE FF                		    cpi  0FFh
+0107 850D C2 30 86             		    jnz  paletteOff
+0108 8510 11 00 20             		    lxi  d, 2000h
+0109 8513 CD 76 01             		    call delay
+0110 8516 7E                   		    mov  a, m
+0111 8517 FE 21                		    cpi  '!'
+0112 8519 CA F3 85             		    jz   intro_5
+0113 851C CD B2 01             		    call drawText2
+0114 851F C2 08 85             		    jnz  intro_4
+0117 8522                      		fly:
+0119 8522 CD A8 06             		    call copyImageFromScreen
+0120 8525 21 90 D0             		    lxi  h, 0D090h
+0121 8528 01 0C 30             		    lxi  b, 48 * 256 + PLANE_HEIGHT ; width * 256 + height
+0122 852B 11 48 CA             		    lxi  d, PLANE_BUFFER ; to
+0123 852E CD C1 06             		    call copyImage
+0124 8531 CD B2 06             		    call copyImageToScreen
+0126 8534                      		fly_0:
+0128 8534 21 90 BE             		    lxi  h, 0D090h - ((PLANE_WIDTH - 1) * Y_MULTIPLIER)
+0129 8537 22 5E 85             		    shld fly_a1
+0132 853A 21 98 C8             		    lxi  h, PLANE_BUFFER - ((PLANE_WIDTH - 1) * PLANE_HEIGHT * 2)
+0133 853D 22 4D 85             		    shld fly_a2
+0136 8540                      		fly_1:
+0138 8540 06 08                		    mvi  b, 8
+0139 8542                      		fly_2:
+0140 8542 C5                   		    push b
+0143 8543 21 41 89             		    lxi  h, plane
+0144 8546 CD C9 85             		    call shiftImage
+0147 8549 21 41 89             		    lxi  h, plane
+0148 854C                      		fly_a2 = $+1
+0149 854C 01 48 CA             		    lxi  b, PLANE_BUFFER
+0150 854F 11 80 C8             		    lxi  d, PLANE_BUFFER_2
+0151 8552 3E E4                		    mvi  a, PLANE_WIDTH * PLANE_HEIGHT
+0152 8554 CD B1 85             		    call copyMaskedImageToBuffer
+0155 8557 01 0C 13             		    lxi  b, PLANE_WIDTH * 256 + PLANE_HEIGHT ; width * 256 + height
+0156 855A 11 80 C8             		    lxi  d, PLANE_BUFFER_2 ; to
+0157 855D                      		fly_a1 = $+1
+0158 855D 21 90 D0             		    lxi  h, 0D090h ; from
+0159 8560 CD 4C 86             		    call copyImageSafe
+0161 8563 C1                   		    pop b
+0164 8564 CD 12 FC             		    call inkey_FC12
+0165 8567 FE FF                		    cpi  0FFh
+0166 8569 C2 30 86             		    jnz  paletteOff
+0168 856C 05                   		    dcr b
+0169 856D C2 42 85             		    jnz fly_2
+0172 8570 21 65 89             		    lxi  h, plane + (PLANE_HEIGHT * 3)
+0173 8573 11 41 89             		    lxi  d, plane
+0174 8576 06 AB                		    mvi  b, PLANE_SIZE_1 / 4
+0175 8578 CD 94 85             		    call memcpyq
+0178 857B 2A 4D 85             		    lhld fly_a2
+0179 857E 11 18 00             		    lxi  d, PLANE_HEIGHT * 2
+0180 8581 19                   		    dad  d
+0181 8582 22 4D 85             		    shld fly_a2
+0184 8585 2A 5E 85             		    lhld fly_a1
+0185 8588 24                   		    inr  h
+0186 8589 22 5E 85             		    shld fly_a1
+0189 858C 7C                   		    mov  a, h
+0190 858D B7                   		    ora  a
+0191 858E C2 40 85             		    jnz  fly_1
+0194 8591 C3 34 85             		    jmp  fly_0
+0198 8594                      		memcpyq:
+0200 8594 E5                   		    push h
+0201 8595 21 02 00             		    lxi  h, 2
+0202 8598 39                   		    dad  sp
+0203 8599 22 AE 85             		    shld memcpyq_2
+0204 859C E1                   		    pop  h
+0205 859D F9                   		    sphl
+0206 859E EB                   		    xchg
+0207 859F                      		memcpyq_1:
+0208 859F D1                   		    pop  d
+0209 85A0 73                   		    mov  m, e
+0210 85A1 23                   		    inx  h
+0211 85A2 72                   		    mov  m, d
+0212 85A3 23                   		    inx  h
+0213 85A4 D1                   		    pop  d
+0214 85A5 73                   		    mov  m, e
+0215 85A6 23                   		    inx  h
+0216 85A7 72                   		    mov  m, d
+0217 85A8 23                   		    inx  h
+0218 85A9 05                   		    dcr  b
+0219 85AA C2 9F 85             		    jnz  memcpyq_1
+0220 85AD                      		memcpyq_2 = $+1
+0221 85AD 31 00 00             		    lxi  sp, 0
+0222 85B0 C9                   		    ret
 0227 85B1                      		copyMaskedImageToBuffer:
 0228 85B1                      		copyImage91_1:
 0229 85B1 F5                   		    push psw
@@ -1825,166 +1829,166 @@
 0251 85C4 3D                   		    dcr  a
 0252 85C5 C2 B1 85             		    jnz  copyImage91_1
 0253 85C8 C9                   		    ret
-0258 85C9                      		shiftImage:
-0259 85C9 1E 24                		    mvi  e, PLANE_HEIGHT * 3 ; всего строк и плоскостей
-0260 85CB                      		shiftImage_1:
-0261 85CB E5                   		    push h
-0262 85CC 01 88 02             		    lxi  b, (PLANE_WIDTH - 1) * PLANE_HEIGHT * 3 ; шаг в 12 пикселей
-0263 85CF 09                   		    dad  b
-0264 85D0 7E                   		    mov  a, m
-0265 85D1 17                   		    ral
-0266 85D2 E1                   		    pop  h
-0268 85D3 01 24 00             		    lxi  b, PLANE_HEIGHT * 3 ; шаг
-0269 85D6 16 09                		    mvi  d, PLANE_WIDTH / 2 ; всего столбцов
-0270 85D8 E5                   		    push h
-0271 85D9                      		intro_34:
-0273 85D9 7E                   		    mov  a, m
-0274 85DA 17                   		    ral
-0275 85DB 77                   		    mov  m, a
-0277 85DC 9F                   		    sbb  a
-0278 85DD 09                   		    dad  b
-0279 85DE 0F                   		    rrc
-0281 85DF 7E                   		    mov  a, m
-0282 85E0 17                   		    ral
-0283 85E1 77                   		    mov  m, a
-0285 85E2 9F                   		    sbb  a
-0286 85E3 09                   		    dad  b
-0287 85E4 0F                   		    rrc
-0289 85E5 15                   		    dcr  d
-0290 85E6 C2 D9 85             		    jnz  intro_34
-0292 85E9 7E                   		    mov  a, m
-0293 85EA 17                   		    ral
-0294 85EB 77                   		    mov  m, a
-0296 85EC E1                   		    pop  h
-0297 85ED 23                   		    inx  h
-0298 85EE 1D                   		    dcr  e
-0299 85EF C2 CB 85             		    jnz  shiftImage_1
-0300 85F2 C9                   		    ret
-0305 85F3                      		intro_5:
-0306 85F3 E5                   		    push h
-0307 85F4 06 0E                		    mvi  b, 14
-0308 85F6                      		intro_6:
-0309 85F6 C5                   		    push b
-0310 85F7 11 2A B9             		    lxi  d, 0BFFFh - (15*14) - (6*256) - 3
-0311 85FA D5                   		    push d
-0312 85FB E1                   		    pop  h
-0313 85FC 06 24                		    mvi  b, 36
-0314 85FE                      		scroll_0:
-0315 85FE D5                   		    push d
-0316 85FF E5                   		    push h
-0317 8600 0E 1A                		    mvi  c, 26
-0318 8602                      		scroll_1:
-0319 8602 2B                   		    dcx  h
-0320 8603 7E                   		    mov  a, m
-0321 8604 12                   		    stax d
-0322 8605 1B                   		    dcx  d
-0323 8606 0D                   		    dcr  c
-0324 8607 C2 02 86             		    jnz  scroll_1
-0325 860A E1                   		    pop  h
-0326 860B D1                   		    pop  d
-0327 860C 25                   		    dcr  h
-0328 860D 15                   		    dcr  d
-0329 860E 05                   		    dcr  b
-0330 860F C2 FE 85             		    jnz  scroll_0
-0331 8612 C1                   		    pop  b
-0332 8613 05                   		    dcr  b
-0333 8614 C2 F6 85             		    jnz  intro_6
-0335 8617 21 11 F9             		    lxi  h, 0FFFFh - (17*14) - (6*256)
-0336 861A 22 B8 01             		    shld drawCharAddr
-0337 861D E1                   		    pop  h
-0338 861E 23                   		    inx  h
-0339 861F C3 08 85             		    jmp  intro_4
-0343 8622                      		paletteOn:
-0344 8622 CD 3E 86             		    call paletteLoadDark
-0345 8625 CD 9F 01             		    call delay8000
-0346 8628 3E 04                		    mvi  a, PALETTE_CYAN
-0347 862A 01 00 03             		    lxi  b, PALETTE_RED * 256 + PALETTE_WHITE
-0348 862D C3 43 86             		    jmp paletteLoad
-0352 8630                      		paletteOff:
-0353 8630 CD 3E 86             		    call paletteLoadDark
-0354 8633 CD 9F 01             		    call delay8000
-0355 8636 3E 0F                		    mvi  a, PALETTE_BLACK
-0356 8638 01 0F 0F             		    lxi  b, PALETTE_BLACK * 256 + PALETTE_BLACK
-0357 863B C3 43 86             		    jmp paletteLoad
-0361 863E                      		paletteLoadDark:
-0362 863E 3E 0C                		    mvi  a, PALETTE_DARK_CYAN
-0363 8640 01 08 0B             		    lxi  b, PALETTE_DARK_RED * 256 + PALETTE_DARK_GRAY
-0364 8643                      		paletteLoad:
-0365 8643 D3 91                		    out  IO_PALETTE_1
-0366 8645 78                   		    mov  a, b
-0367 8646 D3 92                		    out  IO_PALETTE_2
-0368 8648 79                   		    mov  a, c
-0369 8649 D3 93                		    out  IO_PALETTE_3
-0370 864B C9                   		    ret
-0375 864C                      		copyImageSafe:
-0377 864C 7C                   		    mov  a, h
-0378 864D D6 D0                		    sui  0D0h
-0379 864F DA 66 86             		    jc   copyImageSafe_2
-0383 8652 7C                   		    mov  a, h
-0384 8653 80                   		    add  b
-0385 8654 3D                   		    dcr  a
-0386 8655 FE D0                		    cpi  0D0h
-0387 8657 D2 C1 06             		    jnc  copyImage
-0389 865A 3C                   		    inr  a
-0390 865B D5                   		    push d
-0391 865C 57                   		    mov  d, a
-0392 865D 78                   		    mov  a, b
-0393 865E 92                   		    sub  d
-0394 865F 47                   		    mov  b, a
-0395 8660 D1                   		    pop  d
-0396 8661 C8                   		    rz
-0397 8662 D8                   		    rc
-0398 8663 C3 C1 06             		    jmp  copyImage
-0402 8666                      		copyImageSafe_2:
-0403 8666 C5                   		    push b
-0404 8667 EB                   		    xchg
-0405 8668 06 00                		    mvi  b, 0
-0406 866A 09                   		    dad  b
-0407 866B 09                   		    dad  b
-0408 866C EB                   		    xchg
-0409 866D C1                   		    pop  b
-0410 866E 05                   		    dcr  b
-0411 866F 24                   		    inr  h
-0412 8670 C3 4C 86             		    jmp  copyImageSafe
-0416 8673                      		introText2:
-0417 8673 21 54 45             		    db 33,"TETRIS WAS INVENTED BY A 30-YEAR-OLD"
-0418 8698 21 53 4F             		    db 33,"SOVIET RESEARCHER NAMED ALEXEY"
-0419 86B7 21 50 41             		    db 33,"PAZHITNOV WHO CURRENTLY WORKS AT"
-0420 86D8 21 54 48             		    db 33,"THE COMPUTER CENTRE(ACADEMY SOFT) OF"
-0421 86FD 21 54 48             		    db 33,"THE USSR ACADEMY OF SCIENCES IN"
-0422 871D 21 4D 4F             		    db 33,"MOSCOW. THE ORIGINAL PROGRAMMER WAS"
-0423 8741 21 31 38             		    db 33,"18-YO VADIM GERASIMOV. A STUDENT"
-0424 8762 21 53 54             		    db 33,"STUDYING COMPUTER INFORMATICS AT"
-0425 8783 21 4D 4F             		    db 33,"MOSCOW UNIVERSITY. NOW YOU CAN ENJOY"
-0426 87A8 21 54 45             		    db 33,"TETRIS BECAUSE OF THE JOINT EFFORTS"
-0427 87CC 21 4F 46             		    db 33,"OF ACADEMY SOFT, MOSCOW, ANDROMEDA"
-0428 87EF 21 53 4F             		    db 33,"SOFTWARE LTD, LONDON, ALEMORF, SPB"
-0429 8812 21 41 4E             		    db 33,"AND SPECTRUM HOLOBYTE, USA."
-0430 882E 00                   		    db 0
-0434 882F                      		introText:
-0435 882F 02 0B 53             		    db  4-2,19-8,"SPECTRUM HOLOBYTE PRESENTS"
-0436 884B 04 12 54             		    db  6-2,26-8,"T E T R I S"
-0437 8858 06 07 56             		    db  8-2,15-8,"VERSION"
-0438 8861 06 19 50             		    db  8-2,33-8,"PROGRAMMER"
-0439 886D 08 07 49             		    db 10-2,15-8,"ISKRA 1080 TARTU"
-0440 887F 08 19 41             		    db 10-2,33-8,"ALEKSEY MOROZOV"
-0441 8890 0A 07 49             		    db 12-2,15-8,"IBM CGA"
-0442 8899 0A 19 45             		    db 12-2,33-8,"ENG AN JIO"
-0443 88A5 0B 07 52             		    db 13-2,15-8,"RAM RESIDENT"
-0444 88B3 0B 19 45             		    db 13-2,33-8,"ERICK JAP"
-0445 88BE 0C 07 54             		    db 14-2,15-8,"TANDY"
-0446 88C5 0C 19 42             		    db 14-2,33-8,"BILLY SUTYONO"
-0447 88D4 0D 07 49             		    db 15-2,15-8,"IBM EGA"
-0448 88DD 0D 19 41             		    db 15-2,33-8,"ARYANTO WIDODO"
-0449 88ED 0F 07 47             		    db 17-2,15-8,"GRAPHICS"
-0450 88F7 0F 19 44             		    db 17-2,33-8,"DAN GUERRA"
-0451 8903 10 07 50             		    db 18-2,15-8,"PRODUCT MANAGER"
-0452 8914 10 19 52             		    db 18-2,33-8,"R. ANTON WIDJAJA"
-0453 8926 11 07 50             		    db 19-2,15-8,"PRODUCER"
-0454 8930 11 19 53             		    db 19-2,33-8,"SEAN B. BARGER"
-0455 8940 00                   		    db 0
-0343 8941                      		plane:
-0344 8941                      		.include "graph/plane.inc"
+0259 85C9                      		shiftImage:
+0260 85C9 1E 24                		    mvi  e, PLANE_HEIGHT * 3 ; всего строк и плоскостей
+0261 85CB                      		shiftImage_1:
+0262 85CB E5                   		    push h
+0263 85CC 01 88 02             		    lxi  b, (PLANE_WIDTH - 1) * PLANE_HEIGHT * 3 ; шаг в 12 пикселей
+0264 85CF 09                   		    dad  b
+0265 85D0 7E                   		    mov  a, m
+0266 85D1 17                   		    ral
+0267 85D2 E1                   		    pop  h
+0269 85D3 01 24 00             		    lxi  b, PLANE_HEIGHT * 3 ; шаг
+0270 85D6 16 09                		    mvi  d, PLANE_WIDTH / 2 ; всего столбцов
+0271 85D8 E5                   		    push h
+0272 85D9                      		intro_34:
+0274 85D9 7E                   		    mov  a, m
+0275 85DA 17                   		    ral
+0276 85DB 77                   		    mov  m, a
+0278 85DC 9F                   		    sbb  a
+0279 85DD 09                   		    dad  b
+0280 85DE 0F                   		    rrc
+0282 85DF 7E                   		    mov  a, m
+0283 85E0 17                   		    ral
+0284 85E1 77                   		    mov  m, a
+0286 85E2 9F                   		    sbb  a
+0287 85E3 09                   		    dad  b
+0288 85E4 0F                   		    rrc
+0290 85E5 15                   		    dcr  d
+0291 85E6 C2 D9 85             		    jnz  intro_34
+0293 85E9 7E                   		    mov  a, m
+0294 85EA 17                   		    ral
+0295 85EB 77                   		    mov  m, a
+0297 85EC E1                   		    pop  h
+0298 85ED 23                   		    inx  h
+0299 85EE 1D                   		    dcr  e
+0300 85EF C2 CB 85             		    jnz  shiftImage_1
+0301 85F2 C9                   		    ret
+0306 85F3                      		intro_5:
+0308 85F3 E5                   		    push h
+0310 85F4 06 0E                		    mvi  b, 14 
+0311 85F6                      		intro_6:
+0312 85F6 C5                   		    push b
+0314 85F7 11 2A B9             		    lxi  d, 0BFFFh - (15*14) - (6*256) - 3
+0315 85FA D5                   		    push d
+0316 85FB E1                   		    pop  h
+0318 85FC 06 24                		    mvi  b, 36
+0319 85FE                      		scroll_0:
+0320 85FE D5                   		    push d
+0321 85FF E5                   		    push h
+0323 8600 0E 1A                		    mvi  c, 26
+0324 8602                      		scroll_1:
+0325 8602 2B                   		    dcx  h
+0326 8603 7E                   		    mov  a, m
+0327 8604 12                   		    stax d
+0328 8605 1B                   		    dcx  d
+0329 8606 0D                   		    dcr  c
+0330 8607 C2 02 86             		    jnz  scroll_1
+0331 860A E1                   		    pop  h
+0332 860B D1                   		    pop  d
+0334 860C 25                   		    dcr  h
+0335 860D 15                   		    dcr  d
+0337 860E 05                   		    dcr  b
+0338 860F C2 FE 85             		    jnz  scroll_0
+0339 8612 C1                   		    pop  b
+0341 8613 05                   		    dcr  b
+0342 8614 C2 F6 85             		    jnz  intro_6
+0344 8617 21 11 F9             		    lxi  h, 0FFFFh - (17*14) - (6*256)
+0345 861A 22 E6 01             		    shld drawCharAddr
+0347 861D E1                   		    pop  h    
+0349 861E 23                   		    inx  h
+0350 861F C3 08 85             		    jmp  intro_4
+0355 8622                      		paletteOn:
+0356 8622 CD 3E 86             		    call paletteLoadDark
+0357 8625 CD 73 01             		    call delay8000
+0358 8628 3E 04                		    mvi  a, PALETTE_CYAN
+0359 862A 01 00 03             		    lxi  b, PALETTE_RED * 256 + PALETTE_WHITE
+0360 862D C3 43 86             		    jmp paletteLoad
+0365 8630                      		paletteOff:
+0366 8630 CD 3E 86             		    call paletteLoadDark
+0367 8633 CD 73 01             		    call delay8000
+0368 8636 3E 0F                		    mvi  a, PALETTE_BLACK
+0369 8638 01 0F 0F             		    lxi  b, PALETTE_BLACK * 256 + PALETTE_BLACK
+0370 863B C3 43 86             		    jmp paletteLoad
+0375 863E                      		paletteLoadDark:
+0376 863E 3E 0C                		    mvi  a, PALETTE_DARK_CYAN
+0377 8640 01 08 0B             		    lxi  b, PALETTE_DARK_RED * 256 + PALETTE_DARK_GRAY
+0378 8643                      		paletteLoad:
+0379 8643 D3 91                		    out  IO_PALETTE_1
+0380 8645 78                   		    mov  a, b
+0381 8646 D3 92                		    out  IO_PALETTE_2
+0382 8648 79                   		    mov  a, c
+0383 8649 D3 93                		    out  IO_PALETTE_3
+0384 864B C9                   		    ret
+0389 864C                      		copyImageSafe:
+0391 864C 7C                   		    mov  a, h
+0392 864D D6 D0                		    sui  0D0h
+0393 864F DA 66 86             		    jc   copyImageSafe_2
+0398 8652 7C                   		    mov  a, h
+0399 8653 80                   		    add  b
+0400 8654 3D                   		    dcr  a
+0401 8655 FE D0                		    cpi  0D0h
+0402 8657 D2 C1 06             		    jnc  copyImage
+0404 865A 3C                   		    inr  a
+0405 865B D5                   		    push d
+0406 865C 57                   		    mov  d, a
+0407 865D 78                   		    mov  a, b
+0408 865E 92                   		    sub  d
+0409 865F 47                   		    mov  b, a
+0410 8660 D1                   		    pop  d
+0411 8661 C8                   		    rz
+0412 8662 D8                   		    rc
+0413 8663 C3 C1 06             		    jmp  copyImage
+0418 8666                      		copyImageSafe_2:
+0420 8666 C5                   		    push b
+0421 8667 EB                   		    xchg
+0422 8668 06 00                		    mvi  b, 0
+0423 866A 09                   		    dad  b
+0424 866B 09                   		    dad  b
+0425 866C EB                   		    xchg
+0426 866D C1                   		    pop  b
+0428 866E 05                   		    dcr  b
+0430 866F 24                   		    inr  h
+0432 8670 C3 4C 86             		    jmp  copyImageSafe
+0436 8673                      		introText2:
+0437 8673 21 54 45             		    db 33,"TETRIS WAS INVENTED BY A 30-YEAR-OLD"
+0438 8698 21 53 4F             		    db 33,"SOVIET RESEARCHER NAMED ALEXEY"
+0439 86B7 21 50 41             		    db 33,"PAZHITNOV WHO CURRENTLY WORKS AT"
+0440 86D8 21 54 48             		    db 33,"THE COMPUTER CENTRE(ACADEMY SOFT) OF"
+0441 86FD 21 54 48             		    db 33,"THE USSR ACADEMY OF SCIENCES IN"
+0442 871D 21 4D 4F             		    db 33,"MOSCOW. THE ORIGINAL PROGRAMMER WAS"
+0443 8741 21 31 38             		    db 33,"18-YO VADIM GERASIMOV. A STUDENT"
+0444 8762 21 53 54             		    db 33,"STUDYING COMPUTER INFORMATICS AT"
+0445 8783 21 4D 4F             		    db 33,"MOSCOW UNIVERSITY. NOW YOU CAN ENJOY"
+0446 87A8 21 54 45             		    db 33,"TETRIS BECAUSE OF THE JOINT EFFORTS"
+0447 87CC 21 4F 46             		    db 33,"OF ACADEMY SOFT, MOSCOW, ANDROMEDA"
+0448 87EF 21 53 4F             		    db 33,"SOFTWARE LTD, LONDON, ALEMORF, SPB"
+0449 8812 21 41 4E             		    db 33,"AND SPECTRUM HOLOBYTE, USA."
+0450 882E 00                   		    db 0
+0454 882F                      		introText:
+0455 882F 02 0B 53             		    db  4-2,19-8,"SPECTRUM HOLOBYTE PRESENTS"
+0456 884B 04 12 54             		    db  6-2,26-8,"T E T R I S"
+0457 8858 06 07 56             		    db  8-2,15-8,"VERSION"
+0458 8861 06 19 50             		    db  8-2,33-8,"PROGRAMMER"
+0459 886D 08 07 49             		    db 10-2,15-8,"ISKRA 1080 TARTU"
+0460 887F 08 19 41             		    db 10-2,33-8,"ALEKSEY MOROZOV"
+0461 8890 0A 07 49             		    db 12-2,15-8,"IBM CGA"
+0462 8899 0A 19 45             		    db 12-2,33-8,"ENG AN JIO"
+0463 88A5 0B 07 52             		    db 13-2,15-8,"RAM RESIDENT"
+0464 88B3 0B 19 45             		    db 13-2,33-8,"ERICK JAP"
+0465 88BE 0C 07 54             		    db 14-2,15-8,"TANDY"
+0466 88C5 0C 19 42             		    db 14-2,33-8,"BILLY SUTYONO"
+0467 88D4 0D 07 49             		    db 15-2,15-8,"IBM EGA"
+0468 88DD 0D 19 41             		    db 15-2,33-8,"ARYANTO WIDODO"
+0469 88ED 0F 07 47             		    db 17-2,15-8,"GRAPHICS"
+0470 88F7 0F 19 44             		    db 17-2,33-8,"DAN GUERRA"
+0471 8903 10 07 50             		    db 18-2,15-8,"PRODUCT MANAGER"
+0472 8914 10 19 52             		    db 18-2,33-8,"R. ANTON WIDJAJA"
+0473 8926 11 07 50             		    db 19-2,15-8,"PRODUCER"
+0474 8930 11 19 53             		    db 19-2,33-8,"SEAN B. BARGER"
+0475 8940 00                   		    db 0
+0161 8941                      		plane:
+0162 8941                      		.include "graph/plane.inc"
 0002 8941 FF 00 00             		  .db 255,  0,  0,255,  0,  0,156,  0, 99, 99,  0,156,156,  0, 99, 99,  0,156,255,  0,  0,255,  0,  0,156,  0, 99, 99,  0,156,156,  0, 99, 99,  0,156
 0003 8965 FF 00 00             		  .db 255,  0,  0,255,  0,  0,  0,  0,255,  0,254,255,  0,102,103,  0,126,127,  0,102,103,  0,102,103,  0,230,231,  0,102,103,  0,254,255,  0,  0,255
 0004 8989 FF 00 00             		  .db 255,  0,  0,255,  0,  0,  0,  0,255,  0,255,255,  0, 32, 32,  0,126,126,  0,126,126,  0, 96, 96,  0,103,103,  0, 32, 32,  0,255,255,  0,  0,255
@@ -2005,8 +2009,8 @@
 0019 8BA5 EF 10 10             		  .db 239, 16, 16,215, 40, 40,103,152,152,113,128,142,112,128,143,128, 79,127, 16,207,239, 96,159,159,126,129,129,254,  0,  1,248,  7,  7,192, 63, 63
 0020 8BC9 FF 00 00             		  .db 255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0
 0021 8BED FF 00 00             		  .db 255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0,255,  0,  0
-0345 8C11                      		igrab:
-0346 8C11                      		.include "graph/igrab.inc"
+0163 8C11                      		igrab:
+0164 8C11                      		.include "graph/igrab.inc"
 0002 8C11 00 91 1E             		  .db 0,145,30,255,3,182,12,109,255,30,26,212,255,59,255,189,27,255,31,254,128,192,96,48,24,12,6,245,255,0,148,255,199,1,3,143,7,13,31,29,63,241,115,225,1,255,236,0,120,255,127,221,3,15,31,30,60,120,30,240,61,224,44,255,96
 0003 8C52 A1 FF F1             		  .db 161,255,241,39,235,231,60,28,224,15,3,0,90,64,166,255,65,255,67,204,90,255,65,35,231,192,246,240,31,6,122,255,134,60,198,127,230,102,118,182,199,190,94,143,46,22,28,228,149,127,128,140,81,9,211,150,255,112,176,184,216,92,108,46,54
 0004 8C93 F1 17 1B             		  .db 241,23,27,11,5,227,2,199,1,101,63,106,254,251,203,201,205,206,144,202,251,172,200,85,255,252,216,255,7,128,50,199,169,112,218,120,88,0,255,60,47,192,1,7,86,115,221,252,7,179,1,6,239,220,252,118,145,220,216,90,255,223,3,53,255
@@ -2017,8 +2021,8 @@
 0009 8DD8 CC EE 0B             		  .db 204,238,11,199,237,6,63,238,129,225,113,120,60,218,62,58,179,255,62,124,222,240,236,239,199,128,211,37,59,221,157,128,227,255,44,108,13,108,255,185,168,127,177,240,175,199,152,1,73,34,135,183,27,119,54,177,52,182,255,54,119,63,255,241,240
 0010 8E19 B1 A0 E7             		  .db 177,160,231,255,240,249,63,150,15,29,232,255,131,255,195,67,99,163,179,248,211,219,107,111,55,241,27,229,13,228,4,227,11,31,252,143,224,176,255,208,216,232,172,180,150,154,139,252,141,133,134,130,131,129,217,255,128,101,255,227,255,34,30,177,14
 0011 8E5A C7 FF 1E             		  .db 199,255,30,63,255,96,16
-0347 8E61                      		packedLogo:
-0348 8E61                      		.include "graph/logo.inc"
+0165 8E61                      		packedLogo:
+0166 8E61                      		.include "graph/logo.inc"
 0002 8E61 00 61 E2             		  .db 0,97,226,255,255,3,2,136,255,207,48,90,63,92,90,128,192,240,120,248,244,252,255,159,220,255,156,152,56,48,199,112,224,217,192,128,44,223,56,120,123,248,32,255,108,243,56,27,220,90,128,248,255,126,63,15,7,217,255,15,201,31,63,240,81
 0003 8EA2 FE F1 E3             		  .db 254,241,227,199,15,62,120,240,202,111,85,1,3,123,227,254,252,248,224,7,15,145,180,108,153,202,150,7,33,87,255,114,240,1,15,127,252,217,170,227,3,88,230,254,55,169,90,31,138,240,217,224,128,203,116,15,199,86,92,129,15,235,31,124,240
 0004 8EE3 EC 01 8F             		  .db 236,1,143,37,227,233,127,131,123,90,192,193,209,231,239,135,223,54,30,240,99,81,192,183,255,30,7,31,63,188,127,231,62,249,251,60,250,23,28,255,94,236,63,31,7,111,248,14,192,64,199,51,252,244,25,123,65,62,58,26,48,63,96,248,232
@@ -2051,6 +2055,6 @@
 0031 95BE A0 0E 3E             		  .db 160,14,62,126,125,150,140,64,202,188,216,255,140,23,63,71,255,96,246,48,144,216,248,250,132,143,120,96,97,73,255,157,182,42,10,239,255,102,119,51,153,219,221,207,172,90,254,43,48,255,103,126,90,126,115,51,57,217,140,200,200,56,246,7,20
 0032 95FF 98 FF 33             		  .db 152,255,51,191,90,248,152,156,206,199,253,218,96,48,249,140,132,57,63,124,95,79,219,229,252,6,119,90,251,195,129,31,204,127,97,77,89,98,198,255,12,111,90,120,193,255,199,216,230,124,114,191,96,192,90,90,60,254,126,255,225,177,57,31,0
 0033 9640 B4 03 C0             		  .db 180,3,192,151,47,90,97,120,63,99,245,3,15,28,180,204,241,96,16
-0349 9653                      		plane_end:
-0353 9653                      		end1:
-0354 9653 
+0167 9653                      		plane_end:
+0171 9653                      		end1:
+0172 9653 

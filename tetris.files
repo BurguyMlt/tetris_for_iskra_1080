@@ -7,4 +7,6 @@ playfieldgraph.inc
 bios.inc
 tetris.inc
 rand.inc
-div16.inc
+opcodes.inc
+fn.inc
+text.inc

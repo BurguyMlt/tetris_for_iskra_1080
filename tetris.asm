@@ -22,6 +22,7 @@
 ; 
 
 .i8080
+.include "opcodes.inc"
 
 ; Карта памяти после загрузки
 ; 0100h - 8C00h Код игры
@@ -49,8 +50,6 @@ fileStart:
 .dw entry
 .dw end1
 .dw entry
-
-OPCODE_MVI_M = 036h
 
 ;----------------------------------------------------------------------------------------------------------------------
 
@@ -100,43 +99,6 @@ gameOverText:
 
 ;----------------------------------------------------------------------------------------------------------------------
 
-drawText:
-    call drawText2
-    jnz  drawText
-    ret
-
-drawText2:
-    mov  a, m
-    ora  a
-    rz
-    inx  h
-    cpi  32
-    jnc  drawText_1
-    mov  e, a
-    add  a ; *2
-    add  e ; *3
-    add  a ; *6
-    add  e ; *7
-    add  a ; *14
-    cma
-    sta  drawCharAddr
-    mvi  a, 0FFh
-    sub  m
-    inx  h
-    sta  drawCharAddr+1
-    mov  a, m
-    inx  h
-drawText_1:
-    push h
-    call drawChar
-    dcr  m
-    pop  h
-    xra  a ; return nz
-    inr  a
-    ret
-
-;----------------------------------------------------------------------------------------------------------------------
-
 pressAnyKey:
     ; Ждем пока пользователь отпустит клавишу
 pressAnyKey_1:
@@ -150,156 +112,12 @@ pressAnyKey_2:
     jz   pressAnyKey_2
     ret
 
-;-------------------------------------------------------------------------------
-
-memcpy8back:
-    ldax d
-    mov m, a
-    dcx d
-    dcx h
-    dcx b
-    mov a, c
-    ora b
-    jnz memcpy8back
-    ret
-
-;-------------------------------------------------------------------------------
-
-memcpy8:
-    mov  a, m
-    stax d
-    inx  d
-    inx  h
-    dcr  c
-    jnz  memcpy8
-    ret
-
-;-------------------------------------------------------------------------------
-
-memset8:
-    mov  m, a
-    inx  h
-    dcr  c
-    jnz  memset8
-    ret
-
 ;----------------------------------------------------------------------------------------------------------------------
 
-delay8000:
-    lxi  d, 08000h
-delay:
-    dcx  d
-    mov  a, d
-    ora  e
-    jnz  delay
-    ret
-
-;----------------------------------------------------------------------------------------------------------------------
-
-FONT_HEIGHT = 12
-
-drawChar:
-    ; Адрес символа в знакогенераторе
-    ; de = font + a * 12
-    mov  l, a
-    mvi  h, 0
-    dad  h ; *2
-    dad  h ; *4
-    mov  d, h
-    mov  e, l
-    dad  h ; *8
-    dad  d ; *12
-    lxi  d, font - (' ' * 12)
-    dad  d
-    xchg
-
-    ; Адрес в видеопамяти
-drawCharAddr = $+1
-    lxi  h, 0D000h
-
-    ; Цикл
-    mvi  c, FONT_HEIGHT
-drawChar_1:
-    push b
-
-    ; Первая плоскость, сразу результат не записываем, а сохраняем в C
-    mov  b, m
-    ldax d
-drawChar_cma1:
-    cma    ; nop
-    ana  b ; ora b
-    mov  c, a
-
-    ; Сохраняем адрес первой плоскости и вычисялем адрес второй плоскости
-    push h
-    mov  a, h
-    sbi  40h
-    mov  h, a
-
-    ; Вторая плоскость
-    mov  b, m
-    ldax d
-drawChar_cma2:
-    cma    ; nop
-    ana  b ; ora b
-
-    ; Записываем в память значения почти одновременно
-    mov  m, a
-    pop  h
-    mov  m, c
-
-    ; Следующий пиксель, следующий байт шрифта
-    inx  h
-    inx  d
-
-    ; Цикл
-    pop  b
-    dcr  c
-    jnz  drawChar_1
-
-    ; Перемещаем курсор на следующий символ
-    lxi h, drawCharAddr+1
-    ret
-
-;----------------------------------------------------------------------------------------------------------------------
-
-OPCODE_NOP   = 0
-OPCODE_CMA   = 2Fh
-OPCODE_ANA_B = 0A0h
-OPCODE_ORA_B = 0B0h
-OPCODE_XRA_A = 0AFh
-
-;setTextColorNt:
-;    mvi  a, 1
-;    lxi  h, OPCODE_NOP + (OPCODE_NOP * 256)
-;    lxi  d, OPCODE_XRA_A + (OPCODE_NOP * 256)
-;    jmp  setTextColor1
-
-;----------------------------------------------------------------------------------------------------------------------
-
-
-setTextColor:
-    lxi  h, OPCODE_CMA + (OPCODE_ANA_B * 256)
-    lxi  d, OPCODE_NOP + (OPCODE_ORA_B * 256)
-setTextColor1:
-    rrc
-    jnc  setTextColor_1
-    xchg
-    cma
-setTextColor_1:
-    shld drawChar_cma1
-    rrc
-    jnc  setTextColor_2
-    xchg
-setTextColor_2:
-    shld drawChar_cma2
-    ret
-
-;----------------------------------------------------------------------------------------------------------------------
-
+.include "fn.inc"
+.include "text.inc"
 .include "tetris.inc"
 .include "bios.inc"
-.include "div16.inc"
 .include "graph.inc"
 .include "playfieldgraph.inc"
 .include "rand.inc"
