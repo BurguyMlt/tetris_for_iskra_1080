@@ -57,6 +57,10 @@ entry:
     ; Инициализируем стек
     lxi sp, 100h
 
+    ; Включение цвета
+    out 0F8h
+    out 0B9h
+
     ; Вступление
     call intro
 
@@ -128,17 +132,17 @@ pressAnyKey_2:
 LEVELS_COUNT = 6
 
 levels dw level1
-       db 0,3,4
+       db PALETTE_WHITE, PALETTE_RED, PALETTE_CYAN
        dw level2
-       db 0,2,4
+       db PALETTE_WHITE, PALETTE_MAGENTA, PALETTE_CYAN
        dw level3
-       db 0,3,5
+       db PALETTE_WHITE, PALETTE_RED, PALETTE_GREEN
        dw level4
-       db 0,3,4
+       db PALETTE_WHITE, PALETTE_RED, PALETTE_CYAN
        dw level5
-       db 0,3,4
+       db PALETTE_WHITE, PALETTE_RED, PALETTE_CYAN
        dw level6
-       db 3,3,4
+       db PALETTE_RED, PALETTE_RED, PALETTE_CYAN
 
 level1:
 .include "graph/level1.inc"
